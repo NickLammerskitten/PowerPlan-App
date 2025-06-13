@@ -9,4 +9,10 @@ class Plan {
   String toString() {
     return 'Plan{id: $id}';
   }
+
+  factory Plan.fromJson(Map<String, dynamic> json) {
+    return Plan(
+      id: json['id'] as String,
+    );
+  }
 }

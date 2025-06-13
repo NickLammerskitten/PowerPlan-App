@@ -14,6 +14,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   intl: ^0.20.2
   provider: ^6.1.5
+  http: ^1.4.0
   shrine_images: ^2.0.2
 
 dev_dependencies:
