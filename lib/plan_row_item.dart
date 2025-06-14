@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:power_plan_fe/styles.dart';
 
-import 'model/plan.dart';
+import 'model/plan_list_item.dart';
 
 class PlanRowItem extends StatelessWidget {
   const PlanRowItem({required this.plan});
 
-  final Plan plan;
+  final PlanListItem plan;
 
   @override
   Widget build(BuildContext context) {
@@ -23,18 +23,18 @@ class PlanRowItem extends StatelessWidget {
         children: <Widget>[
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: EdgeInsets.symmetric(horizontal: 12),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    plan.id,
+                    plan.name,
                     style: Styles.productRowItemName,
                   ),
-                  const Padding(padding: EdgeInsets.only(top: 8)),
+                  Padding(padding: EdgeInsets.only(top: 8)),
                   Text(
-                    '\$${plan.id}',
+                    '${plan.difficultyLevel?.toLowerCase()}',
                     style: Styles.productRowItemPrice,
                   )
                 ],

@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart' as foundation;
-import 'package:power_plan_fe/model/plan.dart';
+import 'package:power_plan_fe/model/plan_list_item.dart';
 import 'package:power_plan_fe/model/plan_repository.dart';
 
 class AppStateModel extends foundation.ChangeNotifier {
@@ -8,9 +8,9 @@ class AppStateModel extends foundation.ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  List<Plan> _plans = [];
+  List<PlanListItem> _plans = [];
 
-  List<Plan> getPlans() => _plans;
+  List<PlanListItem> getPlans() => _plans;
 
   bool get isLoading => _isLoading;
 
@@ -33,7 +33,7 @@ class AppStateModel extends foundation.ChangeNotifier {
     }
   }
 
-  Future<Plan?> getPlan(String id) async {
+  Future<PlanListItem?> getPlan(String id) async {
     _isLoading = true;
     _error = null;
     notifyListeners();

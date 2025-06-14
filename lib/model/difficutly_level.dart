@@ -1,0 +1,1 @@
+enum DifficultyLevel { BEGINNER, INTERMEDIATE, ADVANCED, EXPERT }

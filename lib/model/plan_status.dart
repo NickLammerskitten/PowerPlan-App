@@ -1,0 +1,1 @@
+enum PlanStatus { ACTIVE, FINISHED }
