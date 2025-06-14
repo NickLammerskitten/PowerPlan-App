@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:power_plan_fe/services/auth/auth_service.dart';
+import 'package:power_plan_fe/services/date_formatting_service.dart';
 import 'package:provider/provider.dart';
 
 class SettingsTab extends StatefulWidget {
@@ -15,11 +16,11 @@ class _SettingsTabState extends State<SettingsTab> {
     final authModel = Provider.of<AuthService>(context);
     final user = authModel.user;
 
+    final dateFormattingService = DateFormattingService();
+
     return CustomScrollView(
       slivers: <Widget>[
-        CupertinoSliverNavigationBar(
-          largeTitle: const Text('Einstellungen'),
-        ),
+        CupertinoSliverNavigationBar(largeTitle: const Text('Einstellungen')),
         SliverSafeArea(
           top: false,
           minimum: const EdgeInsets.all(16),
@@ -55,14 +56,14 @@ class _SettingsTabState extends State<SettingsTab> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              user?.email ?? 'Kein E-Mail',
+                              user?.email ?? 'Nicht verfügbar',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
-                              'ID: ${user?.id ?? 'Nicht verfügbar'}',
+                              'Registriert am: ${dateFormattingService.formatDate(user?.createdAt)}',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: CupertinoColors.systemGrey,
@@ -88,16 +89,6 @@ class _SettingsTabState extends State<SettingsTab> {
                 ),
                 const SizedBox(height: 8),
 
-                // Profil bearbeiten
-                _buildSettingsItem(
-                  context,
-                  icon: CupertinoIcons.person,
-                  title: 'Profil bearbeiten',
-                  onTap: () {
-                    // TODO: Zur Profilbearbeitungsseite navigieren
-                  },
-                ),
-
                 // Passwort ändern
                 _buildSettingsItem(
                   context,
@@ -121,7 +112,9 @@ class _SettingsTabState extends State<SettingsTab> {
                         context: context,
                         builder: (context) => CupertinoAlertDialog(
                           title: const Text('Abmelden'),
-                          content: const Text('Möchten Sie sich wirklich abmelden?'),
+                          content: const Text(
+                            'Möchten Sie sich wirklich abmelden?',
+                          ),
                           actions: [
                             CupertinoDialogAction(
                               child: const Text('Abbrechen'),
@@ -139,7 +132,10 @@ class _SettingsTabState extends State<SettingsTab> {
                         ),
                       );
                     },
-                    child: const Text('Abmelden'),
+                    child: const Text(
+                      'Abmelden',
+                      style: TextStyle(color: CupertinoColors.white),
+                    ),
                   ),
                 ),
               ],
@@ -151,11 +147,11 @@ class _SettingsTabState extends State<SettingsTab> {
   }
 
   Widget _buildSettingsItem(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required VoidCallback onTap,
-      }) {
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
