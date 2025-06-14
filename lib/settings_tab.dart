@@ -1,140 +1,175 @@
 import 'package:flutter/cupertino.dart';
+import 'package:power_plan_fe/pages/change_password_page.dart';
 import 'package:power_plan_fe/services/auth/auth_service.dart';
-import 'package:power_plan_fe/services/date_formatting_service.dart';
 import 'package:provider/provider.dart';
 
-class SettingsTab extends StatefulWidget {
-  @override
-  _SettingsTabState createState() {
-    return _SettingsTabState();
-  }
-}
+class SettingsTab extends StatelessWidget {
+  const SettingsTab({Key? key}) : super(key: key);
 
-class _SettingsTabState extends State<SettingsTab> {
   @override
   Widget build(BuildContext context) {
-    final authModel = Provider.of<AuthService>(context);
-    final user = authModel.user;
-
-    final dateFormattingService = DateFormattingService();
+    final authService = Provider.of<AuthService>(context);
+    final currentUser = Provider.of<AuthService>(context).currentUser;
 
     return CustomScrollView(
       slivers: <Widget>[
         CupertinoSliverNavigationBar(largeTitle: const Text('Einstellungen')),
-        SliverSafeArea(
-          top: false,
-          minimum: const EdgeInsets.all(16),
-          sliver: SliverToBoxAdapter(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Benutzerprofil
+                // Benutzerprofil-Abschnitt
+                const Text(
+                  'Profil',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
                 Container(
-                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: CupertinoColors.systemGrey6,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.systemGrey5,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: const Icon(
-                          CupertinoIcons.person_fill,
-                          size: 32,
-                          color: CupertinoColors.systemGrey,
-                        ),
+                    color: CupertinoColors.systemBackground,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: CupertinoColors.systemGrey5,
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Text(
-                              user?.email ?? 'Nicht verfügbar',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: const BoxDecoration(
+                                color: CupertinoColors.activeBlue,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  CupertinoIcons.person_fill,
+                                  color: CupertinoColors.white,
+                                  size: 30,
+                                ),
                               ),
                             ),
-                            Text(
-                              'Registriert am: ${dateFormattingService.formatDate(user?.createdAt)}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: CupertinoColors.systemGrey,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    currentUser?.email ?? 'Nicht verfügbar',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Erstellt am: ${_formatDate(currentUser?.createdAt)}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: CupertinoColors.systemGrey,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemBackground,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CupertinoColors.systemGrey5,
+                          blurRadius: 5,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text(
+                            'Passwort ändern',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: CupertinoColors.label,
+                            ),
+                          ),
+                          Icon(
+                            CupertinoIcons.chevron_right,
+                            color: CupertinoColors.systemGrey,
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Einstellungsoptionen
-                const Text(
-                  'Account',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: CupertinoColors.systemGrey,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Passwort ändern
-                _buildSettingsItem(
-                  context,
-                  icon: CupertinoIcons.lock,
-                  title: 'Passwort ändern',
-                  onTap: () {
-                    // TODO: Zur Passwortänderungsseite navigieren
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      CupertinoPageRoute(
+                        builder: (context) => const ChangePasswordPage(),
+                      ),
+                    );
                   },
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
-                // Abmelden-Button
                 SizedBox(
                   width: double.infinity,
                   child: CupertinoButton(
                     color: CupertinoColors.systemRed,
-                    onPressed: () async {
-                      // Abmeldebestätigung anzeigen
-                      showCupertinoDialog(
-                        context: context,
-                        builder: (context) => CupertinoAlertDialog(
-                          title: const Text('Abmelden'),
-                          content: const Text(
-                            'Möchten Sie sich wirklich abmelden?',
-                          ),
-                          actions: [
-                            CupertinoDialogAction(
-                              child: const Text('Abbrechen'),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            CupertinoDialogAction(
-                              isDestructiveAction: true,
-                              onPressed: () {
-                                Navigator.pop(context);
-                                authModel.signOut();
-                              },
-                              child: const Text('Abmelden'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
                     child: const Text(
                       'Abmelden',
                       style: TextStyle(color: CupertinoColors.white),
+                    ),
+                    onPressed: () async {
+                      await authService.signOut();
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // App-Info
+                const Center(
+                  child: Text(
+                    'Powerplan v1.0.0',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: CupertinoColors.systemGrey,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Center(
+                  child: Text(
+                    '© 2025 Powerplan',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: CupertinoColors.systemGrey,
                     ),
                   ),
                 ),
@@ -146,35 +181,15 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  Widget _buildSettingsItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: CupertinoColors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: CupertinoColors.systemGrey5),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: CupertinoColors.activeBlue),
-            const SizedBox(width: 16),
-            Expanded(child: Text(title)),
-            const Icon(
-              CupertinoIcons.chevron_right,
-              color: CupertinoColors.systemGrey,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
+  String _formatDate(String? dateString) {
+    if (dateString == null) return 'Nicht verfügbar';
+
+    try {
+      final dateTime = DateTime.parse(dateString);
+      // Einfaches Format, kann später mit intl-Paket verbessert werden
+      return '${dateTime.day}.${dateTime.month}.${dateTime.year}';
+    } catch (e) {
+      return 'Ungültiges Datum';
+    }
   }
 }

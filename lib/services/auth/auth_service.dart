@@ -1,68 +1,61 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:power_plan_fe/services/auth/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum AuthStatus {
   initial,
   authenticated,
   unauthenticated,
-  authenticating,
-  registering,
   error
 }
 
 class AuthService extends ChangeNotifier {
-  AuthStatus _status = AuthStatus.initial;
   String? _errorMessage;
-  User? _user;
+  bool _isAuthenticated = false;
+  AuthStatus _status = AuthStatus.initial;
 
-  AuthStatus get status => _status;
   String? get errorMessage => _errorMessage;
-  User? get user => _user;
-  bool get isAuthenticated => _status == AuthStatus.authenticated;
+  bool get isAuthenticated => _isAuthenticated;
+  AuthStatus get status => _status;
+
+  User? get currentUser => SupabaseService.client.auth.currentUser;
 
   Future<void> initialize() async {
-    try {
-      final currentUser = SupabaseService.client.auth.currentUser;
+    await _checkAuth();
 
-      if (currentUser != null) {
-        _user = currentUser;
-        _status = AuthStatus.authenticated;
-      } else {
-        _status = AuthStatus.unauthenticated;
-      }
-    } catch (e) {
-      _status = AuthStatus.unauthenticated;
-      _errorMessage = e.toString();
-    }
-
-    SupabaseService.authStateChanges.listen((event) {
-      _user = event.session?.user;
-      _status = _user != null ? AuthStatus.authenticated : AuthStatus.unauthenticated;
+    SupabaseService.authStateChanges.listen((state) {
+      _isAuthenticated = state.session != null;
+      _status = _isAuthenticated ? AuthStatus.authenticated : AuthStatus.unauthenticated;
       notifyListeners();
     });
+  }
 
+  Future<void> _checkAuth() async {
+    _isAuthenticated = SupabaseService.isAuthenticated;
+    _status = _isAuthenticated ? AuthStatus.authenticated : AuthStatus.unauthenticated;
     notifyListeners();
   }
 
   Future<bool> signInWithEmail(String email, String password) async {
     try {
-      _status = AuthStatus.authenticating;
-      _errorMessage = null;
-      notifyListeners();
-
-      final response = await SupabaseService.signInWithEmail(
+      await SupabaseService.signInWithEmail(
         email: email,
         password: password,
       );
 
-      _user = response.user;
+      _errorMessage = null;
+      _isAuthenticated = true;
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;
-    } catch (e) {
+    } on AuthException catch (e) {
+      _handleAuthError(e);
       _status = AuthStatus.error;
-      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'Ein unerwarteter Fehler ist aufgetreten: ${e.toString()}';
+      _status = AuthStatus.error;
       notifyListeners();
       return false;
     }
@@ -70,46 +63,118 @@ class AuthService extends ChangeNotifier {
 
   Future<bool> signUpWithEmail(String email, String password) async {
     try {
-      _status = AuthStatus.registering;
-      _errorMessage = null;
-      notifyListeners();
-
       final response = await SupabaseService.signUpWithEmail(
         email: email,
         password: password,
       );
 
-      _user = response.user;
-      _status = response.user != null ? AuthStatus.authenticated : AuthStatus.unauthenticated;
+      _errorMessage = null;
+      _isAuthenticated = response.session != null;
+      _status = _isAuthenticated ? AuthStatus.authenticated : AuthStatus.unauthenticated;
       notifyListeners();
-      return response.user != null;
-    } catch (e) {
+      return true;
+    } on AuthException catch (e) {
+      _handleAuthError(e);
       _status = AuthStatus.error;
-      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'Ein unerwarteter Fehler ist aufgetreten: ${e.toString()}';
+      _status = AuthStatus.error;
       notifyListeners();
       return false;
     }
   }
 
-  Future<void> signOut() async {
+  Future<bool> signOut() async {
     try {
       await SupabaseService.signOut();
-      _user = null;
+      _isAuthenticated = false;
+      _errorMessage = null;
       _status = AuthStatus.unauthenticated;
+      notifyListeners();
+      return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = 'Fehler beim Abmelden: ${e.toString()}';
+      notifyListeners();
+      return false;
     }
-    notifyListeners();
   }
 
   Future<bool> resetPassword(String email) async {
     try {
       await SupabaseService.resetPassword(email);
+      _errorMessage = null;
+      notifyListeners();
       return true;
+    } on AuthException catch (e) {
+      _handleAuthError(e);
+      notifyListeners();
+      return false;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = 'Ein unerwarteter Fehler ist aufgetreten: ${e.toString()}';
       notifyListeners();
       return false;
     }
+  }
+
+  Future<bool> changePassword(String currentPassword, String newPassword) async {
+    try {
+      final user = SupabaseService.client.auth.currentUser;
+      if (user == null) {
+        _errorMessage = 'Benutzer ist nicht angemeldet';
+        notifyListeners();
+        return false;
+      }
+
+      final email = user.email;
+      if (email == null) {
+        _errorMessage = 'Benutzer-E-Mail konnte nicht ermittelt werden';
+        notifyListeners();
+        return false;
+      }
+
+      try {
+        await SupabaseService.client.auth.signInWithPassword(
+          email: email,
+          password: currentPassword,
+        );
+      } catch (e) {
+        _errorMessage = 'Aktuelles Passwort ist nicht korrekt';
+        notifyListeners();
+        return false;
+      }
+
+      await SupabaseService.client.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+
+      _errorMessage = null;
+      notifyListeners();
+      return true;
+    } on AuthException catch (e) {
+      _handleAuthError(e);
+      return false;
+    } catch (e) {
+      _errorMessage = 'Ein unerwarteter Fehler ist aufgetreten: ${e.toString()}';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  void _handleAuthError(AuthException e) {
+    switch (e.message) {
+      case 'Invalid login credentials':
+        _errorMessage = 'Ungültige Anmeldedaten. Bitte überprüfen Sie Ihre E-Mail und Ihr Passwort.';
+      case 'Email not confirmed':
+        _errorMessage = 'Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden.';
+      case 'User already registered':
+        _errorMessage = 'Diese E-Mail-Adresse ist bereits registriert.';
+      case 'Password should be at least 6 characters':
+        _errorMessage = 'Das Passwort muss mindestens 6 Zeichen lang sein.';
+      default:
+        _errorMessage = 'Authentifizierungsfehler: ${e.message}';
+    }
+    notifyListeners();
   }
 }

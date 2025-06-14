@@ -6,6 +6,8 @@ import 'package:power_plan_fe/training_tab.dart';
 import 'package:power_plan_fe/settings_tab.dart';
 
 class PowerplanApp extends StatelessWidget {
+  const PowerplanApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
@@ -30,8 +32,7 @@ class AuthWrapper extends StatelessWidget {
 
       case AuthStatus.unauthenticated:
       case AuthStatus.error:
-      default:
-        return const LoginPage();
+      return const LoginPage();
     }
   }
 }
