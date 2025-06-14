@@ -1,4 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import 'package:power_plan_fe/services/auth/auth_service.dart';
+import 'package:provider/provider.dart';
 
 class SettingsTab extends StatefulWidget {
   @override
@@ -10,12 +12,173 @@ class SettingsTab extends StatefulWidget {
 class _SettingsTabState extends State<SettingsTab> {
   @override
   Widget build(BuildContext context) {
+    final authModel = Provider.of<AuthService>(context);
+    final user = authModel.user;
+
     return CustomScrollView(
-      slivers: const <Widget>[
+      slivers: <Widget>[
         CupertinoSliverNavigationBar(
-          largeTitle: Text('Einstellungen'),
+          largeTitle: const Text('Einstellungen'),
+        ),
+        SliverSafeArea(
+          top: false,
+          minimum: const EdgeInsets.all(16),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Benutzerprofil
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.systemGrey5,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: const Icon(
+                          CupertinoIcons.person_fill,
+                          size: 32,
+                          color: CupertinoColors.systemGrey,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user?.email ?? 'Kein E-Mail',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'ID: ${user?.id ?? 'Nicht verfügbar'}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: CupertinoColors.systemGrey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Einstellungsoptionen
+                const Text(
+                  'Account',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: CupertinoColors.systemGrey,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Profil bearbeiten
+                _buildSettingsItem(
+                  context,
+                  icon: CupertinoIcons.person,
+                  title: 'Profil bearbeiten',
+                  onTap: () {
+                    // TODO: Zur Profilbearbeitungsseite navigieren
+                  },
+                ),
+
+                // Passwort ändern
+                _buildSettingsItem(
+                  context,
+                  icon: CupertinoIcons.lock,
+                  title: 'Passwort ändern',
+                  onTap: () {
+                    // TODO: Zur Passwortänderungsseite navigieren
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Abmelden-Button
+                SizedBox(
+                  width: double.infinity,
+                  child: CupertinoButton(
+                    color: CupertinoColors.systemRed,
+                    onPressed: () async {
+                      // Abmeldebestätigung anzeigen
+                      showCupertinoDialog(
+                        context: context,
+                        builder: (context) => CupertinoAlertDialog(
+                          title: const Text('Abmelden'),
+                          content: const Text('Möchten Sie sich wirklich abmelden?'),
+                          actions: [
+                            CupertinoDialogAction(
+                              child: const Text('Abbrechen'),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            CupertinoDialogAction(
+                              isDestructiveAction: true,
+                              onPressed: () {
+                                Navigator.pop(context);
+                                authModel.signOut();
+                              },
+                              child: const Text('Abmelden'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: const Text('Abmelden'),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSettingsItem(
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required VoidCallback onTap,
+      }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: CupertinoColors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: CupertinoColors.systemGrey5),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: CupertinoColors.activeBlue),
+            const SizedBox(width: 16),
+            Expanded(child: Text(title)),
+            const Icon(
+              CupertinoIcons.chevron_right,
+              color: CupertinoColors.systemGrey,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

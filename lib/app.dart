@@ -1,4 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:power_plan_fe/pages/login_page.dart';
+import 'package:power_plan_fe/services/auth/auth_service.dart';
+import 'package:provider/provider.dart';
 import 'package:power_plan_fe/training_tab.dart';
 import 'package:power_plan_fe/settings_tab.dart';
 
@@ -6,8 +9,30 @@ class PowerplanApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
-      home: PowerplanHomePage(),
+      home: AuthWrapper(),
     );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final authModel = Provider.of<AuthService>(context);
+
+    switch (authModel.status) {
+      case AuthStatus.initial:
+        return const CupertinoPageScaffold(
+          child: Center(child: CupertinoActivityIndicator()),
+        );
+
+      case AuthStatus.authenticated:
+        return PowerplanHomePage();
+
+      case AuthStatus.unauthenticated:
+      case AuthStatus.error:
+      default:
+        return const LoginPage();
+    }
   }
 }
 

@@ -1,17 +1,17 @@
+import 'auth/supabase_service.dart';
 
 class ApiService {
   // TODO: Env variables
   static const String _baseUrl = 'http://localhost:8080';
 
-  static const Duration _timeout = Duration(seconds: 10);
-
-  // TODO: Env variables
-  static const String _authToken = 'TODO: ABSTRACT AUTHENTICATION';
+  static const Duration _timeout = Duration(seconds: 15);
 
   Map<String, String> get _headers {
+    final token = SupabaseService.client.auth.currentSession?.accessToken;
+
     return {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $_authToken',
+      'Authorization': token != null ? 'Bearer $token' : '',
     };
   }
 
