@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:power_plan_fe/pages/create_plan/content_step.dart';
 import 'package:power_plan_fe/pages/create_plan/metadata_step.dart';
 import 'package:power_plan_fe/pages/create_plan/plan_form_model.dart';
+import 'package:power_plan_fe/services/api/exercise_api.dart';
+import 'package:power_plan_fe/services/api_service.dart';
 
 class CreatePlanPage extends StatefulWidget {
   const CreatePlanPage({Key? key}) : super(key: key);
@@ -12,6 +14,9 @@ class CreatePlanPage extends StatefulWidget {
 
 class _CreatePlanPageState extends State<CreatePlanPage> {
   final PlanFormModel _formModel = PlanFormModel();
+  final ExerciseApi _exerciseApi = ExerciseApi(
+    ApiService(),
+  ); // Replace with your actual API URL
   int _currentStep = 0;
   String? _errorMessage;
 
@@ -47,6 +52,13 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Plan Erstellen'),
+        trailing: _currentStep == 0
+            ? null
+            : CupertinoButton(
+                padding: EdgeInsets.zero,
+                child: const Text('Weiter'),
+                onPressed: _nextStep,
+              ),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           child: const Text('Zurück'),
@@ -73,7 +85,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             // Current step content
             _currentStep == 0
                 ? MetadataStep(formModel: _formModel)
-                : ContentStep(formModel: _formModel),
+                : ContentStep(formModel: _formModel, exerciseApi: _exerciseApi),
 
             const SizedBox(height: 24),
 

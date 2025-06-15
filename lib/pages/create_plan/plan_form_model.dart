@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:power_plan_fe/model/exercise.dart';
 
 class PlanFormModel extends ChangeNotifier {
   // Metadata fields
@@ -6,15 +7,20 @@ class PlanFormModel extends ChangeNotifier {
   int _weeks = 1;
 
   // Content fields
-  List<TrainingWeek> trainingWeeks = [TrainingWeek(index: 0)];
+  List<TrainingWeek> trainingWeeks = [];
 
   // Validation errors
   String? nameError;
   String? weeksError;
 
+  // Constructor
+  PlanFormModel() {
+    // Initialize with at least one week
+    _updateTrainingWeeks();
+  }
+
   // Getters and setters
   String get name => _name;
-
   set name(String value) {
     _name = value;
     validateName();
@@ -22,7 +28,6 @@ class PlanFormModel extends ChangeNotifier {
   }
 
   int get weeks => _weeks;
-
   set weeks(int value) {
     if (_weeks != value) {
       _weeks = value;
@@ -75,10 +80,32 @@ class PlanFormModel extends ChangeNotifier {
     if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
       final week = trainingWeeks[weekIndex];
       final dayIndex = week.trainingDays.length + 1;
-      week.trainingDays.add(
-        TrainingDay(index: dayIndex, name: 'Tag $dayIndex', exercises: []),
-      );
+      week.trainingDays.add(TrainingDay(
+        index: dayIndex,
+        name: 'Tag $dayIndex',
+        exercises: [],
+      ));
       notifyListeners();
+    }
+  }
+
+  void addExerciseToDay(int weekIndex, int dayIndex, Exercise exercise) {
+    if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
+      final week = trainingWeeks[weekIndex];
+      if (dayIndex >= 0 && dayIndex < week.trainingDays.length) {
+        week.trainingDays[dayIndex].exercises.add(exercise);
+        notifyListeners();
+      }
+    }
+  }
+
+  void removeExerciseFromDay(int weekIndex, int dayIndex, Exercise exercise) {
+    if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
+      final week = trainingWeeks[weekIndex];
+      if (dayIndex >= 0 && dayIndex < week.trainingDays.length) {
+        week.trainingDays[dayIndex].exercises.removeWhere((e) => e.id == exercise.id);
+        notifyListeners();
+      }
     }
   }
 
@@ -96,19 +123,22 @@ class TrainingWeek {
   final int index;
   final List<TrainingDay> trainingDays;
 
-  TrainingWeek({required this.index, List<TrainingDay>? trainingDays})
-    : trainingDays =
-          trainingDays ?? [TrainingDay(index: 1, name: 'Tag 1', exercises: [])];
+  TrainingWeek({
+    required this.index,
+    List<TrainingDay>? trainingDays,
+  }) : trainingDays = trainingDays ?? [TrainingDay(index: 1, name: 'Tag 1', exercises: [])];
 
   Map<String, dynamic> toJson() {
-    return {'trainingDays': trainingDays.map((day) => day.toJson()).toList()};
+    return {
+      'trainingDays': trainingDays.map((day) => day.toJson()).toList(),
+    };
   }
 }
 
 class TrainingDay {
   final int index;
   String name;
-  final List<dynamic> exercises; // TODO: Implement type
+  final List<Exercise> exercises;
 
   TrainingDay({
     required this.index,
@@ -117,6 +147,12 @@ class TrainingDay {
   });
 
   Map<String, dynamic> toJson() {
-    return {'name': name, 'exercises': exercises};
+    return {
+      'name': name,
+      'exercises': exercises.map((exercise) => {
+        'exerciseId': exercise.id,
+        'sets': [], // Will be implemented later
+      }).toList(),
+    };
   }
 }
