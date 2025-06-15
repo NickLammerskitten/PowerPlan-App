@@ -1,7 +1,6 @@
-
 import 'package:flutter/cupertino.dart';
-import 'package:power_plan_fe/pages/create_plan/metadata_step.dart';
 import 'package:power_plan_fe/pages/create_plan/content_step.dart';
+import 'package:power_plan_fe/pages/create_plan/metadata_step.dart';
 import 'package:power_plan_fe/pages/create_plan/plan_form_model.dart';
 
 class CreatePlanPage extends StatefulWidget {
@@ -24,7 +23,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       isValid = _formModel.validateMetadata();
       if (!isValid) {
         setState(() {
-          _errorMessage = 'Bitte korrigieren Sie die Fehler in den Eingabefeldern';
+          _errorMessage =
+              'Bitte korrigieren Sie die Fehler in den Eingabefeldern';
         });
         return;
       }
@@ -68,13 +68,12 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             const SizedBox(height: 24),
 
             // Error message
-            if (_errorMessage != null)
-              _buildErrorMessage(),
+            if (_errorMessage != null) _buildErrorMessage(),
 
             // Current step content
             _currentStep == 0
                 ? MetadataStep(formModel: _formModel)
-                : ContendStep(),
+                : ContentStep(formModel: _formModel),
 
             const SizedBox(height: 24),
 
@@ -152,7 +151,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         child: CupertinoButton(
           color: CupertinoColors.activeBlue,
           onPressed: () {
-            // TODO: Implement plan saving logic
+            // TODO: Implement plan saving logic with API
+            print(_formModel.toCreatePlanRequest());
             Navigator.of(context).pop();
           },
           padding: const EdgeInsets.symmetric(vertical: 12),

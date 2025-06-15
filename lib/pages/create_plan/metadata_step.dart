@@ -110,9 +110,9 @@ class _MetadataStepState extends State<MetadataStep> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               border: Border.all(
-                  color: widget.formModel.nameError != null
-                      ? CupertinoColors.systemRed
-                      : CupertinoColors.systemGrey4
+                color: widget.formModel.nameError != null
+                    ? CupertinoColors.systemRed
+                    : CupertinoColors.systemGrey4,
               ),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -135,9 +135,9 @@ class _MetadataStepState extends State<MetadataStep> {
           Container(
             decoration: BoxDecoration(
               border: Border.all(
-                  color: widget.formModel.weeksError != null
-                      ? CupertinoColors.systemRed
-                      : CupertinoColors.systemGrey4
+                color: widget.formModel.weeksError != null
+                    ? CupertinoColors.systemRed
+                    : CupertinoColors.systemGrey4,
               ),
               borderRadius: BorderRadius.circular(8),
             ),
