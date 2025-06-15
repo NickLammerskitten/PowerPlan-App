@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:power_plan_fe/pages/create_plan/create_plan_page.dart';
 import 'package:power_plan_fe/pages/plan_list_page.dart';
 import 'package:provider/provider.dart';
 
@@ -44,8 +45,8 @@ class TrainingTab extends StatelessWidget {
                               onPressed: () {
                                 Navigator.of(context).push(
                                   CupertinoPageRoute(
-                                      builder: (context) => PlanListPage()
-                                  )
+                                    builder: (context) => PlanListPage(),
+                                  ),
                                 );
                               },
                             ),
@@ -67,7 +68,11 @@ class TrainingTab extends StatelessWidget {
                             ],
                           ),
                           onPressed: () {
-                            // TODO: Implement plan creation
+                            Navigator.of(context).push(
+                              CupertinoPageRoute(
+                                builder: (context) => CreatePlanPage(),
+                              ),
+                            );
                           },
                         ),
                       ),
