@@ -79,7 +79,11 @@ class PlanFormModel extends ChangeNotifier {
       final week = trainingWeeks[weekIndex];
       final dayIndex = week.trainingDays.length + 1;
       week.trainingDays.add(
-        TrainingDay(index: dayIndex, name: 'Tag $dayIndex', exerciseEntries: []),
+        TrainingDay(
+          index: dayIndex,
+          name: 'Tag $dayIndex',
+          exerciseEntries: [],
+        ),
       );
       notifyListeners();
     }
@@ -109,8 +113,197 @@ class PlanFormModel extends ChangeNotifier {
     if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
       final week = trainingWeeks[weekIndex];
       if (dayIndex >= 0 && dayIndex < week.trainingDays.length) {
-        week.trainingDays[dayIndex].exerciseEntries.removeWhere((e) => e == exercise);
+        week.trainingDays[dayIndex].exerciseEntries.removeWhere(
+          (e) => e == exercise,
+        );
         notifyListeners();
+      }
+    }
+  }
+
+  void addSetToExerciseEntry(int weekIndex, int dayIndex, int exerciseIndex) {
+    if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
+      final week = trainingWeeks[weekIndex];
+      if (dayIndex >= 0 && dayIndex < week.trainingDays.length) {
+        final day = week.trainingDays[dayIndex];
+        if (exerciseIndex >= 0 && exerciseIndex < day.exerciseEntries.length) {
+          final exercise = day.exerciseEntries[exerciseIndex];
+
+          // If there are existing sets, duplicate the last one
+          if (exercise.sets.isNotEmpty) {
+            final lastSet = exercise.sets.last;
+
+            // Create a new set with the same properties as the last one
+            final newSet = SetEntry(
+              repetitionSchemeType: lastSet.repetitionSchemeType,
+              fixedReps: lastSet.fixedReps,
+              minReps: lastSet.minReps,
+              maxReps: lastSet.maxReps,
+              goalSchemeType: lastSet.goalSchemeType,
+              rpe: lastSet.rpe,
+              minRpe: lastSet.minRpe,
+              maxRpe: lastSet.maxRpe,
+              percent1RM: lastSet.percent1RM,
+            );
+
+            exercise.sets.add(newSet);
+          } else {
+            // If no existing sets, add a default one
+            exercise.sets.add(SetEntry.defaultSet());
+          }
+
+          notifyListeners();
+        }
+      }
+    }
+  }
+
+  void removeSetFromExerciseEntry(
+    int weekIndex,
+    int dayIndex,
+    int exerciseIndex,
+    int setIndex,
+  ) {
+    if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
+      final week = trainingWeeks[weekIndex];
+      if (dayIndex >= 0 && dayIndex < week.trainingDays.length) {
+        final day = week.trainingDays[dayIndex];
+        if (exerciseIndex >= 0 && exerciseIndex < day.exerciseEntries.length) {
+          final exercise = day.exerciseEntries[exerciseIndex];
+          if (setIndex >= 0 && setIndex < exercise.sets.length) {
+            exercise.sets.removeAt(setIndex);
+            notifyListeners();
+          }
+        }
+      }
+    }
+  }
+
+  void updateSetRepetitionSchemeType(
+    int weekIndex,
+    int dayIndex,
+    int exerciseIndex,
+    int setIndex,
+    RepetitionSchemeType schemeType,
+  ) {
+    if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
+      final week = trainingWeeks[weekIndex];
+      if (dayIndex >= 0 && dayIndex < week.trainingDays.length) {
+        final day = week.trainingDays[dayIndex];
+        if (exerciseIndex >= 0 && exerciseIndex < day.exerciseEntries.length) {
+          final exercise = day.exerciseEntries[exerciseIndex];
+          if (setIndex >= 0 && setIndex < exercise.sets.length) {
+            final set = exercise.sets[setIndex];
+            set.repetitionSchemeType = schemeType;
+
+            // Reset values based on new scheme type
+            if (schemeType == RepetitionSchemeType.FIXED) {
+              set.fixedReps = 8;
+              set.minReps = null;
+              set.maxReps = null;
+            } else if (schemeType == RepetitionSchemeType.RANGE) {
+              set.fixedReps = null;
+              set.minReps = 8;
+              set.maxReps = 12;
+            } else if (schemeType == RepetitionSchemeType.AMRAP) {
+              set.fixedReps = null;
+              set.minReps = null;
+              set.maxReps = null;
+            }
+
+            notifyListeners();
+          }
+        }
+      }
+    }
+  }
+
+  void updateSetGoalSchemeType(
+    int weekIndex,
+    int dayIndex,
+    int exerciseIndex,
+    int setIndex,
+    GoalSchemeType schemeType,
+  ) {
+    if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
+      final week = trainingWeeks[weekIndex];
+      if (dayIndex >= 0 && dayIndex < week.trainingDays.length) {
+        final day = week.trainingDays[dayIndex];
+        if (exerciseIndex >= 0 && exerciseIndex < day.exerciseEntries.length) {
+          final exercise = day.exerciseEntries[exerciseIndex];
+          if (setIndex >= 0 && setIndex < exercise.sets.length) {
+            final set = exercise.sets[setIndex];
+            set.goalSchemeType = schemeType;
+
+            // Reset values based on new scheme type
+            if (schemeType == GoalSchemeType.RPE) {
+              set.rpe = 8.0;
+              set.minRpe = null;
+              set.maxRpe = null;
+              set.percent1RM = null;
+            } else if (schemeType == GoalSchemeType.RPE_RANGE) {
+              set.rpe = null;
+              set.minRpe = 7.0;
+              set.maxRpe = 8.0;
+              set.percent1RM = null;
+            } else if (schemeType == GoalSchemeType.PERCENT_OF_1RM) {
+              set.rpe = null;
+              set.minRpe = null;
+              set.maxRpe = null;
+              set.percent1RM = 0.75; // 75%
+            }
+
+            notifyListeners();
+          }
+        }
+      }
+    }
+  }
+
+  void updateSetValue(
+    int weekIndex,
+    int dayIndex,
+    int exerciseIndex,
+    int setIndex,
+    String valueType,
+    dynamic value,
+  ) {
+    if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
+      final week = trainingWeeks[weekIndex];
+      if (dayIndex >= 0 && dayIndex < week.trainingDays.length) {
+        final day = week.trainingDays[dayIndex];
+        if (exerciseIndex >= 0 && exerciseIndex < day.exerciseEntries.length) {
+          final exercise = day.exerciseEntries[exerciseIndex];
+          if (setIndex >= 0 && setIndex < exercise.sets.length) {
+            final set = exercise.sets[setIndex];
+
+            switch (valueType) {
+              case 'fixedReps':
+                set.fixedReps = value as int?;
+                break;
+              case 'minReps':
+                set.minReps = value as int?;
+                break;
+              case 'maxReps':
+                set.maxReps = value as int?;
+                break;
+              case 'rpe':
+                set.rpe = value as double?;
+                break;
+              case 'minRpe':
+                set.minRpe = value as double?;
+                break;
+              case 'maxRpe':
+                set.maxRpe = value as double?;
+                break;
+              case 'percent1RM':
+                set.percent1RM = value as double?;
+                break;
+            }
+
+            notifyListeners();
+          }
+        }
       }
     }
   }
@@ -131,7 +324,8 @@ class TrainingWeek {
 
   TrainingWeek({required this.index, List<TrainingDay>? trainingDays})
     : trainingDays =
-          trainingDays ?? [TrainingDay(index: 1, name: 'Tag 1', exerciseEntries: [])];
+          trainingDays ??
+          [TrainingDay(index: 1, name: 'Tag 1', exerciseEntries: [])];
 
   Map<String, dynamic> toJson() {
     return {'trainingDays': trainingDays.map((day) => day.toJson()).toList()};
@@ -152,7 +346,9 @@ class TrainingDay {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'exercises': exerciseEntries.map((exercise) => exercise.toJson()).toList(),
+      'exercises': exerciseEntries
+          .map((exercise) => exercise.toJson())
+          .toList(),
     };
   }
 }
@@ -173,24 +369,46 @@ class ExerciseEntry {
 }
 
 class SetEntry {
-  final RepetitionSchemeType repetitionSchemeType = RepetitionSchemeType.FIXED;
+  RepetitionSchemeType repetitionSchemeType;
   int? fixedReps;
   int? minReps;
   int? maxReps;
 
-  final GoalSchemeType goalSchemeType = GoalSchemeType.RPE;
+  GoalSchemeType goalSchemeType;
   double? rpe;
   double? minRpe;
   double? maxRpe;
   double? percent1RM;
 
+  SetEntry({
+    this.repetitionSchemeType = RepetitionSchemeType.FIXED,
+    this.fixedReps = 8,
+    this.minReps,
+    this.maxReps,
+    this.goalSchemeType = GoalSchemeType.RPE,
+    this.rpe = 8.0,
+    this.minRpe,
+    this.maxRpe,
+    this.percent1RM,
+  });
+
+  // Factory constructor for creating default set
+  factory SetEntry.defaultSet() {
+    return SetEntry(
+      repetitionSchemeType: RepetitionSchemeType.FIXED,
+      fixedReps: 8,
+      goalSchemeType: GoalSchemeType.RPE,
+      rpe: 8.0,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
-      'repetitionSchemeType': repetitionSchemeType,
+      'repetitionSchemeType': repetitionSchemeType.toString().split('.').last,
       'fixedReps': fixedReps,
       'minReps': minReps,
       'maxReps': maxReps,
-      'goalSchemeType': goalSchemeType,
+      'goalSchemeType': goalSchemeType.toString().split('.').last,
       'rpe': rpe,
       'minRpe': minRpe,
       'maxRpe': maxRpe,
@@ -229,5 +447,9 @@ class SetEntry {
     } else {
       return false;
     }
+  }
+
+  bool isValid() {
+    return validateRepetitionSchemeType() && validateGoalSchemeType();
   }
 }
