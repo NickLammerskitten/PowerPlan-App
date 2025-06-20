@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:power_plan_fe/model/body_section.dart';
 import 'package:power_plan_fe/model/classification.dart';
 import 'package:power_plan_fe/model/difficutly_level.dart';
-import 'package:power_plan_fe/model/exercise.dart';
+import 'package:power_plan_fe/model/exercise_list_item.dart';
 import 'package:power_plan_fe/services/api/exercise_api.dart';
 
 class SelectExercisePage extends StatefulWidget {
   final ExerciseApi exerciseApi;
-  final Function(Exercise) onExerciseSelected;
+  final Function(ExerciseListItem) onExerciseSelected;
 
   const SelectExercisePage({
     Key? key,
@@ -24,16 +24,14 @@ class _SelectExercisePageState extends State<SelectExercisePage> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  List<Exercise> _exercises = [];
+  List<ExerciseListItem> _exercises = [];
   bool _isLoading = false;
   bool _hasMoreData = true;
   String _errorMessage = '';
 
-  // Filters
   ExercisesQueryFilters _filters = ExercisesQueryFilters();
   bool _showFilters = false;
 
-  // Filter selections
   List<DifficultyLevel> _selectedDifficultyLevels = [];
   List<BodySection> _selectedBodySections = [];
   List<Classification> _selectedClassifications = [];
@@ -66,7 +64,6 @@ class _SelectExercisePageState extends State<SelectExercisePage> {
   }
 
   Future<void> _onSearchChanged() async {
-    // Debounce search input
     await Future.delayed(const Duration(milliseconds: 500));
     if (_searchController.text != _filters.fullTextSearch) {
       setState(() {
@@ -218,7 +215,6 @@ class _SelectExercisePageState extends State<SelectExercisePage> {
       child: SafeArea(
         child: Column(
           children: [
-            // Search bar
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: CupertinoSearchTextField(
@@ -228,16 +224,13 @@ class _SelectExercisePageState extends State<SelectExercisePage> {
               ),
             ),
 
-            // Filters section
             if (_showFilters) _buildFiltersSection(),
 
-            // Filter chips (show selected filters)
             if (_selectedDifficultyLevels.isNotEmpty ||
                 _selectedBodySections.isNotEmpty ||
                 _selectedClassifications.isNotEmpty)
               _buildFilterChips(),
 
-            // Exercise list
             Expanded(
               child: _errorMessage.isNotEmpty
                   ? _buildErrorMessage()
@@ -303,7 +296,6 @@ class _SelectExercisePageState extends State<SelectExercisePage> {
 
           const SizedBox(height: 16),
 
-          // Body sections
           const Text(
             'Körperbereich:',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -342,7 +334,6 @@ class _SelectExercisePageState extends State<SelectExercisePage> {
 
           const SizedBox(height: 16),
 
-          // Classifications
           const Text(
             'Klassifikation:',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -383,7 +374,6 @@ class _SelectExercisePageState extends State<SelectExercisePage> {
 
           const SizedBox(height: 16),
 
-          // Filter action buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -417,7 +407,6 @@ class _SelectExercisePageState extends State<SelectExercisePage> {
   Widget _buildFilterChips() {
     List<Widget> chips = [];
 
-    // Add difficulty level chips
     for (final level in _selectedDifficultyLevels) {
       chips.add(
         _buildFilterChip(_getDifficultyLevelName(level), () {
@@ -429,7 +418,6 @@ class _SelectExercisePageState extends State<SelectExercisePage> {
       );
     }
 
-    // Add body section chips
     for (final section in _selectedBodySections) {
       chips.add(
         _buildFilterChip(_getBodySectionName(section), () {
@@ -441,7 +429,6 @@ class _SelectExercisePageState extends State<SelectExercisePage> {
       );
     }
 
-    // Add classification chips
     for (final classification in _selectedClassifications) {
       chips.add(
         _buildFilterChip(_getClassificationName(classification), () {

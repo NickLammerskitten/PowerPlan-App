@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:power_plan_fe/model/exercise.dart';
+import 'package:power_plan_fe/model/exercise_list_item.dart';
+import 'package:power_plan_fe/model/goal_scheme_type.dart';
+import 'package:power_plan_fe/model/repetition_scheme_type.dart';
 
 class PlanFormModel extends ChangeNotifier {
-  // Metadata fields
   String _name = '';
   int _weeks = 1;
 
-  // Content fields
   List<TrainingWeek> trainingWeeks = [];
 
-  // Validation errors
   String? nameError;
   String? weeksError;
 
-  // Constructor
   PlanFormModel() {
-    // Initialize with at least one week
     _updateTrainingWeeks();
   }
 
-  // Getters and setters
   String get name => _name;
+
   set name(String value) {
     _name = value;
     validateName();
@@ -28,6 +25,7 @@ class PlanFormModel extends ChangeNotifier {
   }
 
   int get weeks => _weeks;
+
   set weeks(int value) {
     if (_weeks != value) {
       _weeks = value;
@@ -80,30 +78,38 @@ class PlanFormModel extends ChangeNotifier {
     if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
       final week = trainingWeeks[weekIndex];
       final dayIndex = week.trainingDays.length + 1;
-      week.trainingDays.add(TrainingDay(
-        index: dayIndex,
-        name: 'Tag $dayIndex',
-        exercises: [],
-      ));
+      week.trainingDays.add(
+        TrainingDay(index: dayIndex, name: 'Tag $dayIndex', exerciseEntries: []),
+      );
       notifyListeners();
     }
   }
 
-  void addExerciseToDay(int weekIndex, int dayIndex, Exercise exercise) {
+  void addExerciseEntryToDay(
+    int weekIndex,
+    int dayIndex,
+    ExerciseListItem exercise,
+  ) {
     if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
       final week = trainingWeeks[weekIndex];
       if (dayIndex >= 0 && dayIndex < week.trainingDays.length) {
-        week.trainingDays[dayIndex].exercises.add(exercise);
+        week.trainingDays[dayIndex].exerciseEntries.add(
+          ExerciseEntry(exercise: exercise, sets: []),
+        );
         notifyListeners();
       }
     }
   }
 
-  void removeExerciseFromDay(int weekIndex, int dayIndex, Exercise exercise) {
+  void removeExerciseEntryFromDay(
+    int weekIndex,
+    int dayIndex,
+    ExerciseEntry exercise,
+  ) {
     if (weekIndex >= 0 && weekIndex < trainingWeeks.length) {
       final week = trainingWeeks[weekIndex];
       if (dayIndex >= 0 && dayIndex < week.trainingDays.length) {
-        week.trainingDays[dayIndex].exercises.removeWhere((e) => e.id == exercise.id);
+        week.trainingDays[dayIndex].exerciseEntries.removeWhere((e) => e == exercise);
         notifyListeners();
       }
     }
@@ -112,7 +118,7 @@ class PlanFormModel extends ChangeNotifier {
   Map<String, dynamic> toCreatePlanRequest() {
     return {
       'name': _name,
-      'difficultyLevel': null, // TODO: add later
+      'difficultyLevel': null,
       'classifications': <String>[], // TODO: add later
       'weeks': trainingWeeks.map((week) => week.toJson()).toList(),
     };
@@ -123,36 +129,105 @@ class TrainingWeek {
   final int index;
   final List<TrainingDay> trainingDays;
 
-  TrainingWeek({
-    required this.index,
-    List<TrainingDay>? trainingDays,
-  }) : trainingDays = trainingDays ?? [TrainingDay(index: 1, name: 'Tag 1', exercises: [])];
+  TrainingWeek({required this.index, List<TrainingDay>? trainingDays})
+    : trainingDays =
+          trainingDays ?? [TrainingDay(index: 1, name: 'Tag 1', exerciseEntries: [])];
 
   Map<String, dynamic> toJson() {
-    return {
-      'trainingDays': trainingDays.map((day) => day.toJson()).toList(),
-    };
+    return {'trainingDays': trainingDays.map((day) => day.toJson()).toList()};
   }
 }
 
 class TrainingDay {
   final int index;
   String name;
-  final List<Exercise> exercises;
+  final List<ExerciseEntry> exerciseEntries;
 
   TrainingDay({
     required this.index,
     required this.name,
-    required this.exercises,
+    required this.exerciseEntries,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'exercises': exercises.map((exercise) => {
-        'exerciseId': exercise.id,
-        'sets': [], // Will be implemented later
-      }).toList(),
+      'exercises': exerciseEntries.map((exercise) => exercise.toJson()).toList(),
     };
+  }
+}
+
+class ExerciseEntry {
+  final ExerciseListItem exercise;
+  final List<SetEntry> sets;
+
+  ExerciseEntry({required this.exercise, List<SetEntry>? sets})
+    : sets = sets ?? [];
+
+  Map<String, dynamic> toJson() {
+    return {
+      'exerciseId': exercise.id,
+      'sets': sets.map((set) => set.toJson()).toList(),
+    };
+  }
+}
+
+class SetEntry {
+  final RepetitionSchemeType repetitionSchemeType = RepetitionSchemeType.FIXED;
+  int? fixedReps;
+  int? minReps;
+  int? maxReps;
+
+  final GoalSchemeType goalSchemeType = GoalSchemeType.RPE;
+  double? rpe;
+  double? minRpe;
+  double? maxRpe;
+  double? percent1RM;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'repetitionSchemeType': repetitionSchemeType,
+      'fixedReps': fixedReps,
+      'minReps': minReps,
+      'maxReps': maxReps,
+      'goalSchemeType': goalSchemeType,
+      'rpe': rpe,
+      'minRpe': minRpe,
+      'maxRpe': maxRpe,
+      'percent1RM': percent1RM,
+    };
+  }
+
+  bool validateRepetitionSchemeType() {
+    if (repetitionSchemeType == RepetitionSchemeType.FIXED) {
+      return fixedReps != null && minReps == null && maxReps == null;
+    } else if (repetitionSchemeType == RepetitionSchemeType.AMRAP) {
+      return fixedReps == null && minReps == null && maxReps == null;
+    } else if (repetitionSchemeType == RepetitionSchemeType.RANGE) {
+      return fixedReps == null && minReps != null && maxReps != null;
+    } else {
+      return false;
+    }
+  }
+
+  bool validateGoalSchemeType() {
+    if (goalSchemeType == GoalSchemeType.RPE) {
+      return rpe != null &&
+          minRpe == null &&
+          maxRpe == null &&
+          percent1RM == null;
+    } else if (goalSchemeType == GoalSchemeType.RPE_RANGE) {
+      return rpe == null &&
+          minRpe != null &&
+          maxRpe != null &&
+          percent1RM == null;
+    } else if (goalSchemeType == GoalSchemeType.PERCENT_OF_1RM) {
+      return rpe == null &&
+          minRpe == null &&
+          maxRpe == null &&
+          percent1RM != null;
+    } else {
+      return false;
+    }
   }
 }

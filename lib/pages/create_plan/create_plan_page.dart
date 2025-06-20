@@ -3,6 +3,7 @@ import 'package:power_plan_fe/pages/create_plan/content_step.dart';
 import 'package:power_plan_fe/pages/create_plan/metadata_step.dart';
 import 'package:power_plan_fe/pages/create_plan/plan_form_model.dart';
 import 'package:power_plan_fe/services/api/exercise_api.dart';
+import 'package:power_plan_fe/services/api/plan_api.dart';
 import 'package:power_plan_fe/services/api_service.dart';
 
 class CreatePlanPage extends StatefulWidget {
@@ -14,9 +15,11 @@ class CreatePlanPage extends StatefulWidget {
 
 class _CreatePlanPageState extends State<CreatePlanPage> {
   final PlanFormModel _formModel = PlanFormModel();
+
+  final PlanApi _planApi = PlanApi(ApiService());
   final ExerciseApi _exerciseApi = ExerciseApi(
     ApiService(),
-  ); // Replace with your actual API URL
+  );
   int _currentStep = 0;
   String? _errorMessage;
 
@@ -163,9 +166,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         child: CupertinoButton(
           color: CupertinoColors.activeBlue,
           onPressed: () {
-            // TODO: Implement plan saving logic with API
-            print(_formModel.toCreatePlanRequest());
-            Navigator.of(context).pop();
+            _planApi.createPlan(_formModel);
           },
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: const Text(

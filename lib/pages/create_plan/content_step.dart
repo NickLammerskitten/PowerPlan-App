@@ -4,7 +4,6 @@ import 'package:power_plan_fe/pages/select_exercise_page.dart';
 
 import '../../services/api/exercise_api.dart';
 
-
 class ContentStep extends StatefulWidget {
   final PlanFormModel formModel;
   final ExerciseApi exerciseApi;
@@ -25,12 +24,9 @@ class _ContentStepState extends State<ContentStep> {
   @override
   void initState() {
     super.initState();
-    // Make sure we have at least one week with one day
     if (widget.formModel.trainingWeeks.isEmpty) {
       widget.formModel.weeks = 1;
     }
-
-    // Listen for changes in the form model
     widget.formModel.addListener(_handleFormModelChanges);
   }
 
@@ -41,10 +37,11 @@ class _ContentStepState extends State<ContentStep> {
   }
 
   void _handleFormModelChanges() {
-    // Make sure the selected week index is valid after weeks change
     if (_selectedWeekIndex >= widget.formModel.trainingWeeks.length) {
       setState(() {
-        _selectedWeekIndex = widget.formModel.trainingWeeks.isEmpty ? 0 : widget.formModel.trainingWeeks.length - 1;
+        _selectedWeekIndex = widget.formModel.trainingWeeks.isEmpty
+            ? 0
+            : widget.formModel.trainingWeeks.length - 1;
       });
     }
   }
@@ -55,11 +52,16 @@ class _ContentStepState extends State<ContentStep> {
         builder: (context) => SelectExercisePage(
           exerciseApi: widget.exerciseApi,
           onExerciseSelected: (exercise) {
-            // Add the selected exercise to the day
-            final currentWeek = widget.formModel.trainingWeeks[_selectedWeekIndex];
+            final currentWeek =
+                widget.formModel.trainingWeeks[_selectedWeekIndex];
             final day = currentWeek.trainingDays[dayIndex];
-            // For now, just add the exercise (implementation will be expanded later)
-            widget.formModel.addExerciseToDay(_selectedWeekIndex, dayIndex, exercise);
+
+            // TODO For now, just add the exercise (implementation will be expanded later)
+            widget.formModel.addExerciseEntryToDay(
+              _selectedWeekIndex,
+              dayIndex,
+              exercise,
+            );
             setState(() {});
           },
         ),
@@ -69,15 +71,11 @@ class _ContentStepState extends State<ContentStep> {
 
   @override
   Widget build(BuildContext context) {
-    // Safety check to avoid index errors
     if (widget.formModel.trainingWeeks.isEmpty) {
       return const Center(
         child: Text(
           'Bitte fügen Sie mindestens eine Trainingswoche hinzu',
-          style: TextStyle(
-            color: CupertinoColors.systemGrey,
-            fontSize: 16,
-          ),
+          style: TextStyle(color: CupertinoColors.systemGrey, fontSize: 16),
         ),
       );
     }
@@ -85,11 +83,9 @@ class _ContentStepState extends State<ContentStep> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Week tabs
         _buildWeekTabs(),
         const SizedBox(height: 16),
 
-        // Current week content
         _buildWeekContent(),
       ],
     );
@@ -137,7 +133,6 @@ class _ContentStepState extends State<ContentStep> {
   }
 
   Widget _buildWeekContent() {
-    // Additional safety check
     if (_selectedWeekIndex >= widget.formModel.trainingWeeks.length) {
       _selectedWeekIndex = widget.formModel.trainingWeeks.length - 1;
     }
@@ -147,14 +142,12 @@ class _ContentStepState extends State<ContentStep> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Training days list
         ...currentWeek.trainingDays.asMap().entries.map((entry) {
           final index = entry.key;
           final day = entry.value;
           return _buildTrainingDayCard(day, index);
         }),
 
-        // Add day button
         const SizedBox(height: 16),
         CupertinoButton(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -188,7 +181,6 @@ class _ContentStepState extends State<ContentStep> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Day header
           Row(
             children: [
               Text(
@@ -211,8 +203,7 @@ class _ContentStepState extends State<ContentStep> {
 
           const SizedBox(height: 16),
 
-          // Exercise list
-          if (day.exercises.isEmpty)
+          if (day.exerciseEntries.isEmpty)
             const Text(
               'Keine Übungen gefunden.',
               style: TextStyle(
@@ -222,7 +213,7 @@ class _ContentStepState extends State<ContentStep> {
             )
           else
             Column(
-              children: day.exercises.map((exercise) {
+              children: day.exerciseEntries.map((exercise) {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(12),
@@ -235,7 +226,7 @@ class _ContentStepState extends State<ContentStep> {
                     children: [
                       Expanded(
                         child: Text(
-                          exercise.name,
+                          exercise.exercise.name,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
@@ -244,9 +235,17 @@ class _ContentStepState extends State<ContentStep> {
                       ),
                       CupertinoButton(
                         padding: EdgeInsets.zero,
-                        child: const Icon(CupertinoIcons.trash, size: 20, color: CupertinoColors.systemRed),
+                        child: const Icon(
+                          CupertinoIcons.trash,
+                          size: 20,
+                          color: CupertinoColors.systemRed,
+                        ),
                         onPressed: () {
-                          widget.formModel.removeExerciseFromDay(_selectedWeekIndex, dayIndex, exercise);
+                          widget.formModel.removeExerciseEntryFromDay(
+                            _selectedWeekIndex,
+                            dayIndex,
+                            exercise,
+                          );
                           setState(() {});
                         },
                       ),
@@ -258,7 +257,6 @@ class _ContentStepState extends State<ContentStep> {
 
           const SizedBox(height: 16),
 
-          // Add exercise button
           CupertinoButton(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             color: CupertinoColors.activeBlue.withOpacity(0.1),
@@ -266,7 +264,11 @@ class _ContentStepState extends State<ContentStep> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: const [
-                Icon(CupertinoIcons.add, size: 16, color: CupertinoColors.activeBlue),
+                Icon(
+                  CupertinoIcons.add,
+                  size: 16,
+                  color: CupertinoColors.activeBlue,
+                ),
                 SizedBox(width: 8),
                 Text(
                   'Übung hinzufügen',
@@ -282,7 +284,9 @@ class _ContentStepState extends State<ContentStep> {
   }
 
   void _showEditDayNameDialog(TrainingDay day) {
-    final TextEditingController controller = TextEditingController(text: day.name);
+    final TextEditingController controller = TextEditingController(
+      text: day.name,
+    );
 
     showCupertinoDialog(
       context: context,

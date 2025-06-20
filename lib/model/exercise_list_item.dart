@@ -2,14 +2,14 @@ import 'body_section.dart';
 import 'classification.dart';
 import 'difficutly_level.dart';
 
-class Exercise {
+class ExerciseListItem {
   final String id;
   final String name;
 
-  Exercise({required this.id, required this.name});
+  ExerciseListItem({required this.id, required this.name});
 
-  factory Exercise.fromJson(Map<String, dynamic> json) {
-    return Exercise(id: json['id'], name: json['name']);
+  factory ExerciseListItem.fromJson(Map<String, dynamic> json) {
+    return ExerciseListItem(id: json['id'], name: json['name']);
   }
 }
 

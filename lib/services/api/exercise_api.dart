@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:power_plan_fe/model/exercise.dart';
+import 'package:power_plan_fe/model/exercise_list_item.dart';
 import 'package:power_plan_fe/services/api_service.dart';
 
 class ExerciseApi {
@@ -9,7 +9,7 @@ class ExerciseApi {
 
   ExerciseApi(this._apiService);
 
-  Future<List<Exercise>> getExercises({
+  Future<List<ExerciseListItem>> getExercises({
     required ExercisesQueryFilters filters,
   }) async {
     final queryParams = filters.toQueryParameters();
@@ -32,7 +32,7 @@ class ExerciseApi {
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
-        return jsonList.map((json) => Exercise.fromJson(json)).toList();
+        return jsonList.map((json) => ExerciseListItem.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load exercises: ${response.statusCode}');
       }
