@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' as foundation;
+import 'package:power_plan_fe/model/plan.dart';
 import 'package:power_plan_fe/model/plan_list_item.dart';
 import 'package:power_plan_fe/model/plan_repository.dart';
 
@@ -33,7 +34,7 @@ class AppStateModel extends foundation.ChangeNotifier {
     }
   }
 
-  Future<PlanListItem?> getPlan(String id) async {
+  Future<Plan?> getPlan(String id) async {
     _isLoading = true;
     _error = null;
     notifyListeners();

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:power_plan_fe/pages/create_plan/content_step.dart';
 import 'package:power_plan_fe/pages/create_plan/metadata_step.dart';
 import 'package:power_plan_fe/pages/create_plan/plan_form_model.dart';
+import 'package:power_plan_fe/pages/edit_plan/plan_edit_page.dart';
 import 'package:power_plan_fe/services/api/exercise_api.dart';
 import 'package:power_plan_fe/services/api/plan_api.dart';
 import 'package:power_plan_fe/services/api_service.dart';
@@ -166,7 +167,22 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         child: CupertinoButton(
           color: CupertinoColors.activeBlue,
           onPressed: () {
-            _planApi.createPlan(_formModel);
+            final idFuture = _planApi.createPlan(_formModel);
+            idFuture.then((id) {
+              if (id != null) {
+                Navigator.of(context).push(
+                  CupertinoPageRoute(
+                    builder: (context) => PlanEditPage(
+                        id: id
+                    ),
+                  ),
+                );
+              } else {
+                setState(() {
+                  _errorMessage = 'Fehler beim Erstellen des Plans';
+                });
+              }
+            });
           },
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: const Text(

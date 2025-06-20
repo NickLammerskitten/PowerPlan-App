@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:power_plan_fe/model/app_state_model.dart';
+import 'package:power_plan_fe/pages/edit_plan/plan_edit_page.dart';
 import 'package:power_plan_fe/plan_row_item.dart';
 import 'package:provider/provider.dart';
 
@@ -80,8 +81,13 @@ class PlanListPage extends StatelessWidget {
                         delegate: SliverChildBuilderDelegate((context, index) {
                           return GestureDetector(
                             onTap: () {
-                              print('Plan tapped: ${plans[index].id}');
-                              // TODO: Implement navigation to plan detail page
+                              Navigator.of(context).push(
+                                CupertinoPageRoute(
+                                  builder: (context) => PlanEditPage(
+                                    id: plans[index].id
+                                  ),
+                                ),
+                              );
                             },
                             child: PlanRowItem(plan: plans[index]),
                           );

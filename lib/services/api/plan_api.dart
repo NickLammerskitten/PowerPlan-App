@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:power_plan_fe/model/plan.dart';
 import 'package:power_plan_fe/model/plan_list_item.dart';
 import 'package:power_plan_fe/pages/create_plan/plan_form_model.dart';
 import 'package:power_plan_fe/services/api_service.dart';
@@ -31,7 +32,7 @@ class PlanApi {
     }
   }
 
-  Future<PlanListItem> fetchPlan(String id) async {
+  Future<Plan> fetchPlan(String id) async {
     try {
       final response = await http
           .get(
@@ -42,7 +43,7 @@ class PlanApi {
 
       if (response.statusCode == 200) {
         final dynamic jsonData = json.decode(response.body);
-        return PlanListItem.fromJson(jsonData);
+        return Plan.fromJson(jsonData);
       } else {
         throw Exception('Failed to load plan: ${response.statusCode}');
       }
@@ -52,7 +53,7 @@ class PlanApi {
     }
   }
 
-  Future<bool> createPlan(PlanFormModel plan) async {
+  Future<String?> createPlan(PlanFormModel plan) async {
     final createPlanRequestContent = plan.toCreatePlanRequest();
     final createPlanRequest = json.encode(createPlanRequestContent);
 
@@ -69,7 +70,7 @@ class PlanApi {
 
       if (response.statusCode == 200) {
         // TODO return planView
-        return true;
+        return json.decode(response.body)['id'] as String?;
       } else {
         throw Exception('Failed to create plan: ${response.statusCode}');
       }
