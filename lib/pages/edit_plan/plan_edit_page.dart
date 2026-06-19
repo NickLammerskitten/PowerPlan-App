@@ -123,6 +123,94 @@ class _PlanEditPageState extends State<PlanEditPage> {
     }
   }
 
+  Future<void> _addDay(String weekId, int nextDayNumber) async {
+    try {
+      await _planApi.addDay(widget.id, weekId, 'Tag $nextDayNumber');
+      await _refreshKeepScroll();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Fehler beim Hinzufügen des Tages: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _removeDay(String dayId) async {
+    try {
+      await _planApi.removeDay(widget.id, dayId);
+      await _refreshKeepScroll();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Fehler beim Löschen des Tages: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _renameDay(TrainingDayView day, String weekId) async {
+    final controller = TextEditingController(text: day.name);
+    final newName = await showCupertinoDialog<String>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('Tag umbenennen'),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: CupertinoTextField(
+            controller: controller,
+            autofocus: true,
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('Abbrechen'),
+            onPressed: () => Navigator.of(ctx).pop(null),
+          ),
+          CupertinoDialogAction(
+            child: const Text('Speichern'),
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+          ),
+        ],
+      ),
+    );
+    if (newName == null || newName.isEmpty || newName == day.name) return;
+    try {
+      await _planApi.editDay(widget.id, day.id, weekId: weekId, name: newName);
+      await _refreshKeepScroll();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Fehler beim Umbenennen des Tages: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _confirmRemoveDay(TrainingDayView day) async {
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('Tag löschen'),
+        content: Text('Tag "${day.name}" wirklich löschen?'),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('Abbrechen'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            child: const Text('Löschen'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _removeDay(day.id);
+    }
+  }
+
   Future<void> _addWeek() async {
     try {
       await _planApi.addWeek(widget.id);
@@ -288,8 +376,9 @@ class _PlanEditPageState extends State<PlanEditPage> {
         ),
       );
       for (final day in week.trainingDays) {
-        widgets.add(_buildDay(day));
+        widgets.add(_buildDay(day, week.id));
       }
+      widgets.add(_buildAddDayButton(week.id, week.trainingDays.length + 1));
     }
     if (plan.weeks.length < _maxWeeks) {
       widgets.add(
@@ -322,7 +411,34 @@ class _PlanEditPageState extends State<PlanEditPage> {
     return widgets;
   }
 
-  Widget _buildDay(TrainingDayView day) {
+  Widget _buildAddDayButton(String weekId, int nextDayNumber) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: CupertinoButton(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        color: CupertinoColors.activeBlue.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        onPressed: () => _addDay(weekId, nextDayNumber),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(
+              CupertinoIcons.add,
+              size: 16,
+              color: CupertinoColors.activeBlue,
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Tag hinzufügen',
+              style: TextStyle(color: CupertinoColors.activeBlue),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDay(TrainingDayView day, String weekId) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -333,9 +449,43 @@ class _PlanEditPageState extends State<PlanEditPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            day.name,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _renameDay(day, weekId),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          day.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(
+                        CupertinoIcons.pencil,
+                        size: 16,
+                        color: CupertinoColors.systemGrey,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () => _confirmRemoveDay(day),
+                child: const Icon(
+                  CupertinoIcons.trash,
+                  size: 18,
+                  color: CupertinoColors.systemRed,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           if (day.exerciseEntries.isEmpty)

@@ -166,4 +166,55 @@ class PlanApi {
       throw Exception('Failed to remove week: ${response.statusCode}');
     }
   }
+
+  /// Adds a new training day to the given week of the plan.
+  Future<void> addDay(String planId, String weekId, String name) async {
+    final body = json.encode({'weekId': weekId, 'name': name});
+    final response = await http
+        .post(
+          Uri.parse('${_apiService.baseUrl}/plans/$planId/day'),
+          headers: _apiService.headers,
+          body: body,
+        )
+        .timeout(_apiService.timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to add day: ${response.statusCode}');
+    }
+  }
+
+  /// Edits a training day (e.g. renames it).
+  Future<void> editDay(
+    String planId,
+    String dayId, {
+    required String weekId,
+    required String name,
+  }) async {
+    final body = json.encode({'weekId': weekId, 'name': name});
+    final response = await http
+        .post(
+          Uri.parse('${_apiService.baseUrl}/plans/$planId/day/$dayId'),
+          headers: _apiService.headers,
+          body: body,
+        )
+        .timeout(_apiService.timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to edit day: ${response.statusCode}');
+    }
+  }
+
+  /// Removes a training day from the plan.
+  Future<void> removeDay(String planId, String dayId) async {
+    final response = await http
+        .delete(
+          Uri.parse('${_apiService.baseUrl}/plans/$planId/day/$dayId'),
+          headers: _apiService.headers,
+        )
+        .timeout(_apiService.timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to remove day: ${response.statusCode}');
+    }
+  }
 }
