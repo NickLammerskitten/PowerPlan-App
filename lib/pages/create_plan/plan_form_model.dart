@@ -89,6 +89,27 @@ class PlanFormModel extends ChangeNotifier {
     }
   }
 
+  /// Moves a training day within a week from [oldIndex] to [newIndex].
+  ///
+  /// Indices follow the Flutter `ReorderableListView` convention where
+  /// [newIndex] is the position the item should be inserted at after
+  /// removing it from [oldIndex] (i.e. when moving downwards, callers
+  /// typically pass `newIndex - 1`). This method handles both conventions
+  /// transparently by clamping to valid bounds.
+  void reorderTrainingDay(int weekIndex, int oldIndex, int newIndex) {
+    if (weekIndex < 0 || weekIndex >= trainingWeeks.length) return;
+    final days = trainingWeeks[weekIndex].trainingDays;
+    if (oldIndex < 0 || oldIndex >= days.length) return;
+    var target = newIndex;
+    if (target > oldIndex) target -= 1;
+    if (target < 0) target = 0;
+    if (target > days.length - 1) target = days.length - 1;
+    if (target == oldIndex) return;
+    final day = days.removeAt(oldIndex);
+    days.insert(target, day);
+    notifyListeners();
+  }
+
   void addExerciseEntryToDay(
     int weekIndex,
     int dayIndex,
@@ -119,6 +140,30 @@ class PlanFormModel extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  /// Moves an exercise entry within a training day from [oldIndex] to [newIndex].
+  ///
+  /// Follows the Flutter `ReorderableListView` index convention.
+  void reorderExerciseEntry(
+    int weekIndex,
+    int dayIndex,
+    int oldIndex,
+    int newIndex,
+  ) {
+    if (weekIndex < 0 || weekIndex >= trainingWeeks.length) return;
+    final week = trainingWeeks[weekIndex];
+    if (dayIndex < 0 || dayIndex >= week.trainingDays.length) return;
+    final exercises = week.trainingDays[dayIndex].exerciseEntries;
+    if (oldIndex < 0 || oldIndex >= exercises.length) return;
+    var target = newIndex;
+    if (target > oldIndex) target -= 1;
+    if (target < 0) target = 0;
+    if (target > exercises.length - 1) target = exercises.length - 1;
+    if (target == oldIndex) return;
+    final exercise = exercises.removeAt(oldIndex);
+    exercises.insert(target, exercise);
+    notifyListeners();
   }
 
   void addSetToExerciseEntry(int weekIndex, int dayIndex, int exerciseIndex) {

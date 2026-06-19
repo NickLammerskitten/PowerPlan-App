@@ -217,4 +217,90 @@ class PlanApi {
       throw Exception('Failed to remove day: ${response.statusCode}');
     }
   }
+
+  /// Moves a training day to a new position within its week.
+  ///
+  /// `dayIdBefore` is the id of the day after which the moved day should be
+  /// inserted. If `null`, the day is moved to the beginning.
+  Future<void> moveDay(
+    String planId,
+    String dayId, {
+    String? dayIdBefore,
+  }) async {
+    final query = dayIdBefore == null ? '' : '?dayIdBefore=$dayIdBefore';
+    final response = await http
+        .post(
+          Uri.parse('${_apiService.baseUrl}/plans/$planId/day/$dayId/move$query'),
+          headers: _apiService.headers,
+        )
+        .timeout(_apiService.timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to move day: ${response.statusCode}');
+    }
+  }
+
+  /// Adds an exercise entry to a training day.
+  Future<void> addExercise(
+    String planId, {
+    required String trainingDayId,
+    required String exerciseId,
+  }) async {
+    final body = json.encode({
+      'trainingDayId': trainingDayId,
+      'exerciseId': exerciseId,
+    });
+    final response = await http
+        .post(
+          Uri.parse('${_apiService.baseUrl}/plans/$planId/exercise'),
+          headers: _apiService.headers,
+          body: body,
+        )
+        .timeout(_apiService.timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to add exercise: ${response.statusCode}');
+    }
+  }
+
+  /// Removes an exercise entry from the plan.
+  Future<void> removeExercise(String planId, String exerciseEntryId) async {
+    final response = await http
+        .delete(
+          Uri.parse(
+            '${_apiService.baseUrl}/plans/$planId/exercise/$exerciseEntryId',
+          ),
+          headers: _apiService.headers,
+        )
+        .timeout(_apiService.timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to remove exercise: ${response.statusCode}');
+    }
+  }
+
+  /// Moves an exercise entry to a new position within its day.
+  ///
+  /// `exerciseIdBefore` is the id of the exercise entry after which the moved
+  /// entry should be inserted. If `null`, the entry is moved to the beginning.
+  Future<void> moveExercise(
+    String planId,
+    String exerciseEntryId, {
+    String? exerciseIdBefore,
+  }) async {
+    final query =
+        exerciseIdBefore == null ? '' : '?exerciseIdBefore=$exerciseIdBefore';
+    final response = await http
+        .post(
+          Uri.parse(
+            '${_apiService.baseUrl}/plans/$planId/exercise/$exerciseEntryId/move$query',
+          ),
+          headers: _apiService.headers,
+        )
+        .timeout(_apiService.timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to move exercise: ${response.statusCode}');
+    }
+  }
 }

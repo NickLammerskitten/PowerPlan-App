@@ -1,5 +1,13 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Material, Colors, Divider;
+import 'package:flutter/material.dart'
+    show
+        Material,
+        Colors,
+        Divider,
+        ReorderableListView,
+        ReorderableDragStartListener,
+        DefaultMaterialLocalizations,
+        DefaultWidgetsLocalizations;
 import 'package:power_plan_fe/model/goal_scheme_type.dart';
 import 'package:power_plan_fe/model/repetition_scheme_type.dart';
 import 'package:power_plan_fe/pages/create_plan/plan_form_model.dart';
@@ -145,11 +153,50 @@ class _ContentStepState extends State<ContentStep> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ...currentWeek.trainingDays.asMap().entries.map((entry) {
-          final index = entry.key;
-          final day = entry.value;
-          return _buildTrainingDayCard(day, index);
-        }),
+        if (currentWeek.trainingDays.isNotEmpty)
+          Localizations.override(
+            context: context,
+            delegates: const [
+              DefaultMaterialLocalizations.delegate,
+              DefaultWidgetsLocalizations.delegate,
+            ],
+            child: ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            itemCount: currentWeek.trainingDays.length,
+            onReorder: (oldIndex, newIndex) {
+              widget.formModel.reorderTrainingDay(
+                _selectedWeekIndex,
+                oldIndex,
+                newIndex,
+              );
+              setState(() {});
+            },
+            itemBuilder: (context, index) {
+              final day = currentWeek.trainingDays[index];
+              return KeyedSubtree(
+                key: ValueKey('day-$_selectedWeekIndex-$index-${day.name}'),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _buildTrainingDayCard(day, index)),
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 4, top: 16),
+                        child: Icon(
+                          CupertinoIcons.line_horizontal_3,
+                          color: CupertinoColors.systemGrey,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          ),
 
         const SizedBox(height: 16),
         CupertinoButton(
@@ -215,53 +262,82 @@ class _ContentStepState extends State<ContentStep> {
               ),
             )
           else
-            Column(
-              children: day.exerciseEntries.asMap().entries.map((
-                exerciseEntry,
-              ) {
-                final exerciseIndex = exerciseEntry.key;
-                final exercise = exerciseEntry.value;
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: CupertinoColors.systemGrey4),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              exercise.exercise.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+            Localizations.override(
+              context: context,
+              delegates: const [
+                DefaultMaterialLocalizations.delegate,
+                DefaultWidgetsLocalizations.delegate,
+              ],
+              child: ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                itemCount: day.exerciseEntries.length,
+                onReorder: (oldIndex, newIndex) {
+                  widget.formModel.reorderExerciseEntry(
+                    _selectedWeekIndex,
+                    dayIndex,
+                    oldIndex,
+                    newIndex,
+                  );
+                  setState(() {});
+                },
+                itemBuilder: (context, exerciseIndex) {
+                  final exercise = day.exerciseEntries[exerciseIndex];
+                  return Container(
+                    key: ValueKey(
+                      'exercise-$_selectedWeekIndex-$dayIndex-$exerciseIndex-${exercise.exercise.id}',
+                    ),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: CupertinoColors.systemGrey4),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                exercise.exercise.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-                          ),
-                          CupertinoButton(
-                            padding: EdgeInsets.zero,
-                            child: const Icon(
-                              CupertinoIcons.trash,
-                              size: 20,
-                              color: CupertinoColors.systemRed,
+                            ReorderableDragStartListener(
+                              index: exerciseIndex,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 4),
+                                child: Icon(
+                                  CupertinoIcons.line_horizontal_3,
+                                  color: CupertinoColors.systemGrey,
+                                  size: 20,
+                                ),
+                              ),
                             ),
-                            onPressed: () {
-                              widget.formModel.removeExerciseEntryFromDay(
-                                _selectedWeekIndex,
-                                dayIndex,
-                                exercise,
-                              );
-                              setState(() {});
-                            },
-                          ),
-                        ],
-                      ),
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              child: const Icon(
+                                CupertinoIcons.trash,
+                                size: 20,
+                                color: CupertinoColors.systemRed,
+                              ),
+                              onPressed: () {
+                                widget.formModel.removeExerciseEntryFromDay(
+                                  _selectedWeekIndex,
+                                  dayIndex,
+                                  exercise,
+                                );
+                                setState(() {});
+                              },
+                            ),
+                          ],
+                        ),
 
                       if (exercise.sets.isNotEmpty) const Divider(height: 16),
 
@@ -715,10 +791,11 @@ class _ContentStepState extends State<ContentStep> {
                           },
                         ),
                       ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
 
           const SizedBox(height: 16),

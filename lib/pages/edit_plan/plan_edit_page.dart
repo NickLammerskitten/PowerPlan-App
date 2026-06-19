@@ -1,8 +1,17 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Divider;
+import 'package:flutter/material.dart'
+    show
+        Divider,
+        Material,
+        ReorderableListView,
+        ReorderableDragStartListener,
+        DefaultMaterialLocalizations,
+        DefaultWidgetsLocalizations;
 import 'package:power_plan_fe/model/plan.dart';
 import 'package:power_plan_fe/model/set_entry_draft.dart';
 import 'package:power_plan_fe/pages/widgets/set_editor.dart';
+import 'package:power_plan_fe/pages/select_exercise_page.dart';
+import 'package:power_plan_fe/services/api/exercise_api.dart';
 import 'package:power_plan_fe/services/api/plan_api.dart';
 import 'package:power_plan_fe/services/api_service.dart';
 
@@ -19,6 +28,7 @@ class _PlanEditPageState extends State<PlanEditPage> {
   static const int _maxWeeks = 18;
 
   final PlanApi _planApi = PlanApi(ApiService());
+  final ExerciseApi _exerciseApi = ExerciseApi(ApiService());
   final ScrollController _scrollController = ScrollController();
   late Future<Plan> _planFuture;
 
@@ -211,6 +221,131 @@ class _PlanEditPageState extends State<PlanEditPage> {
     }
   }
 
+  Future<void> _addExercise(String trainingDayId) async {
+    await Navigator.of(context).push(
+      CupertinoPageRoute(
+        builder: (_) => SelectExercisePage(
+          exerciseApi: _exerciseApi,
+          onExerciseSelected: (exercise) async {
+            try {
+              await _planApi.addExercise(
+                widget.id,
+                trainingDayId: trainingDayId,
+                exerciseId: exercise.id,
+              );
+              await _refreshKeepScroll();
+            } catch (e) {
+              if (mounted) {
+                setState(() {
+                  _errorMessage = 'Fehler beim Hinzufügen der Übung: $e';
+                });
+              }
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _removeExercise(String exerciseEntryId) async {
+    try {
+      await _planApi.removeExercise(widget.id, exerciseEntryId);
+      await _refreshKeepScroll();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Fehler beim Löschen der Übung: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _confirmRemoveExercise(ExerciseEntryView entry) async {
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('Übung löschen'),
+        content: Text('Übung "${entry.exercise.name}" wirklich löschen?'),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('Abbrechen'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            child: const Text('Löschen'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _removeExercise(entry.id);
+    }
+  }
+
+  /// Reorders an exercise within its training day.
+  Future<void> _reorderExercise(
+    TrainingDayView day,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    var target = newIndex;
+    if (target > oldIndex) target -= 1;
+    if (target == oldIndex) return;
+    final entries = day.exerciseEntries;
+    if (oldIndex < 0 || oldIndex >= entries.length) return;
+    if (target < 0 || target >= entries.length) return;
+
+    final moved = entries[oldIndex];
+    // Determine id of the entry that should be *before* the moved one in the
+    // new order. Build a list without the moved entry to compute it cleanly.
+    final without = [...entries]..removeAt(oldIndex);
+    final beforeId = target == 0 ? null : without[target - 1].id;
+    try {
+      await _planApi.moveExercise(
+        widget.id,
+        moved.id,
+        exerciseIdBefore: beforeId,
+      );
+      await _refreshKeepScroll();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Fehler beim Verschieben der Übung: $e';
+        });
+      }
+    }
+  }
+
+  /// Reorders a day within its week.
+  Future<void> _reorderDay(
+    WeekView week,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    var target = newIndex;
+    if (target > oldIndex) target -= 1;
+    if (target == oldIndex) return;
+    final days = week.trainingDays;
+    if (oldIndex < 0 || oldIndex >= days.length) return;
+    if (target < 0 || target >= days.length) return;
+
+    final moved = days[oldIndex];
+    final without = [...days]..removeAt(oldIndex);
+    final beforeId = target == 0 ? null : without[target - 1].id;
+    try {
+      await _planApi.moveDay(widget.id, moved.id, dayIdBefore: beforeId);
+      await _refreshKeepScroll();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Fehler beim Verschieben des Tages: $e';
+        });
+      }
+    }
+  }
+
   Future<void> _addWeek() async {
     try {
       await _planApi.addWeek(widget.id);
@@ -375,8 +510,53 @@ class _PlanEditPageState extends State<PlanEditPage> {
           ),
         ),
       );
-      for (final day in week.trainingDays) {
-        widgets.add(_buildDay(day, week.id));
+      if (week.trainingDays.isNotEmpty) {
+        widgets.add(
+          Material(
+            color: const Color(0x00000000),
+            child: Localizations.override(
+              context: context,
+              delegates: const [
+                DefaultMaterialLocalizations.delegate,
+                DefaultWidgetsLocalizations.delegate,
+              ],
+              child: ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: week.trainingDays.length,
+              onReorder: (oldIndex, newIndex) =>
+                  _reorderDay(week, oldIndex, newIndex),
+              itemBuilder: (context, index) {
+                final day = week.trainingDays[index];
+                return KeyedSubtree(
+                  key: ValueKey('day-${day.id}'),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _buildDay(day, week.id)),
+                      ReorderableDragStartListener(
+                        index: index,
+                        child: const Padding(
+                          padding: EdgeInsets.only(
+                            left: 4,
+                            top: 24,
+                            right: 4,
+                          ),
+                          child: Icon(
+                            CupertinoIcons.line_horizontal_3,
+                            color: CupertinoColors.systemGrey,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            ),
+          ),
+        );
       }
       widgets.add(_buildAddDayButton(week.id, week.trainingDays.length + 1));
     }
@@ -497,13 +677,68 @@ class _PlanEditPageState extends State<PlanEditPage> {
               ),
             )
           else
-            ...day.exerciseEntries.map(_buildExerciseEntry),
+            Material(
+              color: const Color(0x00000000),
+              child: Localizations.override(
+                context: context,
+                delegates: const [
+                  DefaultMaterialLocalizations.delegate,
+                  DefaultWidgetsLocalizations.delegate,
+                ],
+                child: ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                itemCount: day.exerciseEntries.length,
+                onReorder: (oldIndex, newIndex) =>
+                    _reorderExercise(day, oldIndex, newIndex),
+                itemBuilder: (context, index) {
+                  final entry = day.exerciseEntries[index];
+                  return KeyedSubtree(
+                    key: ValueKey('exercise-${entry.id}'),
+                    child: _buildExerciseEntry(entry, index),
+                  );
+                },
+              ),
+              ),
+            ),
+          _buildAddExerciseButton(day.id),
         ],
       ),
     );
   }
 
-  Widget _buildExerciseEntry(ExerciseEntryView entry) {
+  Widget _buildAddExerciseButton(String trainingDayId) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4.0),
+      child: CupertinoButton(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+        color: CupertinoColors.activeBlue.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+        onPressed: () => _addExercise(trainingDayId),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(
+              CupertinoIcons.add,
+              size: 14,
+              color: CupertinoColors.activeBlue,
+            ),
+            SizedBox(width: 4),
+            Text(
+              'Übung hinzufügen',
+              style: TextStyle(
+                color: CupertinoColors.activeBlue,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExerciseEntry(ExerciseEntryView entry, int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -515,9 +750,38 @@ class _PlanEditPageState extends State<PlanEditPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            entry.exercise.name,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  entry.exercise.name,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              ReorderableDragStartListener(
+                index: index,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6),
+                  child: Icon(
+                    CupertinoIcons.line_horizontal_3,
+                    size: 18,
+                    color: CupertinoColors.systemGrey,
+                  ),
+                ),
+              ),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () => _confirmRemoveExercise(entry),
+                child: const Icon(
+                  CupertinoIcons.trash,
+                  size: 18,
+                  color: CupertinoColors.systemRed,
+                ),
+              ),
+            ],
           ),
           if (entry.sets.isNotEmpty) const Divider(height: 16),
           ...entry.sets.asMap().entries.map((mapEntry) {
