@@ -280,25 +280,18 @@ class PlanFormModel extends ChangeNotifier {
             switch (valueType) {
               case 'fixedReps':
                 set.fixedReps = value as int?;
-                break;
               case 'minReps':
                 set.minReps = value as int?;
-                break;
               case 'maxReps':
                 set.maxReps = value as int?;
-                break;
               case 'rpe':
                 set.rpe = value as double?;
-                break;
               case 'minRpe':
                 set.minRpe = value as double?;
-                break;
               case 'maxRpe':
                 set.maxRpe = value as double?;
-                break;
               case 'percent1RM':
                 set.percent1RM = value as double?;
-                break;
             }
 
             notifyListeners();
