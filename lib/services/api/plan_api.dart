@@ -138,4 +138,32 @@ class PlanApi {
       throw Exception('Failed to remove set: ${response.statusCode}');
     }
   }
+
+  /// Adds a new (empty) week to the plan.
+  Future<void> addWeek(String planId) async {
+    final response = await http
+        .post(
+          Uri.parse('${_apiService.baseUrl}/plans/$planId/week'),
+          headers: _apiService.headers,
+        )
+        .timeout(_apiService.timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to add week: ${response.statusCode}');
+    }
+  }
+
+  /// Removes the week with the given id from the plan.
+  Future<void> removeWeek(String planId, String weekId) async {
+    final response = await http
+        .delete(
+          Uri.parse('${_apiService.baseUrl}/plans/$planId/week/$weekId'),
+          headers: _apiService.headers,
+        )
+        .timeout(_apiService.timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to remove week: ${response.statusCode}');
+    }
+  }
 }

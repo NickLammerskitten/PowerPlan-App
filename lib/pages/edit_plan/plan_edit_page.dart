@@ -16,13 +16,35 @@ class PlanEditPage extends StatefulWidget {
 }
 
 class _PlanEditPageState extends State<PlanEditPage> {
+  static const int _maxWeeks = 18;
+
   final PlanApi _planApi = PlanApi(ApiService());
+  final ScrollController _scrollController = ScrollController();
   late Future<Plan> _planFuture;
 
   /// Local working copies of the sets keyed by their backend id.
   final Map<String, SetEntryDraft> _drafts = {};
 
   String? _errorMessage;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Reloads the plan while preserving the current scroll position.
+  Future<void> _refreshKeepScroll() async {
+    final offset =
+        _scrollController.hasClients ? _scrollController.offset : 0.0;
+    await _refresh();
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final max = _scrollController.position.maxScrollExtent;
+      _scrollController.jumpTo(offset.clamp(0.0, max));
+    });
+  }
 
   @override
   void initState() {
@@ -101,6 +123,56 @@ class _PlanEditPageState extends State<PlanEditPage> {
     }
   }
 
+  Future<void> _addWeek() async {
+    try {
+      await _planApi.addWeek(widget.id);
+      await _refreshKeepScroll();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Fehler beim Hinzufügen der Woche: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _removeWeek(String weekId) async {
+    try {
+      await _planApi.removeWeek(widget.id, weekId);
+      await _refreshKeepScroll();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Fehler beim Löschen der Woche: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _confirmRemoveWeek(String weekId, int weekNumber) async {
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('Woche löschen'),
+        content: Text('Woche $weekNumber wirklich löschen?'),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('Abbrechen'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            child: const Text('Löschen'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _removeWeek(weekId);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -121,6 +193,7 @@ class _PlanEditPageState extends State<PlanEditPage> {
 
             final plan = snapshot.data!;
             return ListView(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16.0),
               children: [
                 _buildHeader(plan),
@@ -191,18 +264,60 @@ class _PlanEditPageState extends State<PlanEditPage> {
       widgets.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Text(
-            'Woche ${w + 1}',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          child: Row(
+            children: [
+              Text(
+                'Woche ${w + 1}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () => _confirmRemoveWeek(week.id, w + 1),
+                child: const Icon(
+                  CupertinoIcons.trash,
+                  size: 20,
+                  color: CupertinoColors.systemRed,
+                ),
+              ),
+            ],
           ),
         ),
       );
       for (final day in week.trainingDays) {
         widgets.add(_buildDay(day));
       }
+    }
+    if (plan.weeks.length < _maxWeeks) {
+      widgets.add(
+      Padding(
+        padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
+        child: CupertinoButton(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          color: CupertinoColors.activeBlue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          onPressed: _addWeek,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(
+                CupertinoIcons.add,
+                size: 16,
+                color: CupertinoColors.activeBlue,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Woche hinzufügen',
+                style: TextStyle(color: CupertinoColors.activeBlue),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
     }
     return widgets;
   }
