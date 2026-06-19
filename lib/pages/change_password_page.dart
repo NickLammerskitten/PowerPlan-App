@@ -1,16 +1,23 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:power_plan_fe/services/auth/auth_service.dart';
+import 'package:power_plan_fe/theme/app_colors.dart';
+import 'package:power_plan_fe/theme/app_radius.dart';
+import 'package:power_plan_fe/theme/app_spacing.dart';
+import 'package:power_plan_fe/theme/app_text_styles.dart';
+import 'package:power_plan_fe/widgets/app_error_view.dart';
+import 'package:power_plan_fe/widgets/app_primary_button.dart';
+import 'package:power_plan_fe/widgets/app_secondary_button.dart';
+import 'package:power_plan_fe/widgets/app_text_field.dart';
 
 class ChangePasswordPage extends StatefulWidget {
-  const ChangePasswordPage({Key? key}) : super(key: key);
+  const ChangePasswordPage({super.key});
 
   @override
-  _ChangePasswordPageState createState() => _ChangePasswordPageState();
+  State<ChangePasswordPage> createState() => _ChangePasswordPageState();
 }
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
-  final _formKey = GlobalKey<FormState>();
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -35,9 +42,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   @override
   void dispose() {
-    _currentPasswordController.removeListener(_validateCurrentPassword);
-    _newPasswordController.removeListener(_validateNewPassword);
-    _confirmPasswordController.removeListener(_validateConfirmPassword);
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
@@ -65,7 +69,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       } else if (newPassword.length < 6) {
         _newPasswordError = 'Passwort muss mindestens 6 Zeichen lang sein';
       } else if (newPassword == _currentPasswordController.text) {
-        _newPasswordError = 'Neues Passwort muss sich vom aktuellen unterscheiden';
+        _newPasswordError =
+            'Neues Passwort muss sich vom aktuellen unterscheiden';
       } else {
         _newPasswordError = null;
       }
@@ -75,7 +80,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   void _validateConfirmPassword() {
     final newPassword = _newPasswordController.text;
     final confirmPassword = _confirmPasswordController.text;
-
     setState(() {
       if (confirmPassword.isEmpty) {
         _confirmPasswordError = 'Passwortbestätigung ist erforderlich';
@@ -91,17 +95,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     _validateCurrentPassword();
     _validateNewPassword();
     _validateConfirmPassword();
-
     return _currentPasswordError == null &&
         _newPasswordError == null &&
         _confirmPasswordError == null;
   }
 
   Future<void> _changePassword() async {
-    // Validierung vor dem Absenden
     if (!_areInputsValid()) {
       setState(() {
-        _errorMessage = 'Bitte korrigieren Sie die Fehler in den Eingabefeldern';
+        _errorMessage = 'Bitte korrigiere die Fehler in den Eingabefeldern';
         _successMessage = null;
       });
       return;
@@ -120,6 +122,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         _newPasswordController.text,
       );
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -127,21 +130,22 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       if (success && mounted) {
         setState(() {
           _successMessage = 'Passwort wurde erfolgreich geändert';
-          // Felder zurücksetzen
           _currentPasswordController.clear();
           _newPasswordController.clear();
           _confirmPasswordController.clear();
         });
       } else if (mounted) {
         setState(() {
-          _errorMessage = Provider.of<AuthService>(context, listen: false).errorMessage ??
-              'Fehler beim Ändern des Passworts';
+          _errorMessage =
+              Provider.of<AuthService>(context, listen: false).errorMessage ??
+                  'Fehler beim Ändern des Passworts';
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Ein unerwarteter Fehler ist aufgetreten: ${e.toString()}';
+        _errorMessage = 'Ein unerwarteter Fehler ist aufgetreten: $e';
       });
     }
   }
@@ -149,187 +153,99 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      backgroundColor: AppColors.background,
       navigationBar: const CupertinoNavigationBar(
+        backgroundColor: AppColors.background,
         middle: Text('Passwort ändern'),
       ),
       child: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            const SizedBox(height: 24),
-
-            // Fehlermeldung
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.systemRed.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: CupertinoColors.systemRed),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-
-            // Erfolgsmeldung
-            if (_successMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.activeGreen.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Text(
-                    _successMessage!,
-                    style: const TextStyle(color: CupertinoColors.activeGreen),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-
-            // Passwortänderungsformular
-            Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Aktuelles Passwort', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  CupertinoTextField(
-                    controller: _currentPasswordController,
-                    placeholder: 'Aktuelles Passwort eingeben',
-                    obscureText: true,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: _currentPasswordError != null
-                              ? CupertinoColors.systemRed
-                              : CupertinoColors.systemGrey4
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  if (_currentPasswordError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        _currentPasswordError!,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemRed,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-
-                  const Text('Neues Passwort', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  CupertinoTextField(
-                    controller: _newPasswordController,
-                    placeholder: 'Neues Passwort eingeben',
-                    obscureText: true,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: _newPasswordError != null
-                              ? CupertinoColors.systemRed
-                              : CupertinoColors.systemGrey4
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  if (_newPasswordError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        _newPasswordError!,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemRed,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  // Passwort-Anforderungen
-                  const Text(
-                    'Passwort muss mindestens 6 Zeichen lang sein',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: CupertinoColors.systemGrey,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  const Text('Neues Passwort bestätigen', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  CupertinoTextField(
-                    controller: _confirmPasswordController,
-                    placeholder: 'Neues Passwort wiederholen',
-                    obscureText: true,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: _confirmPasswordError != null
-                              ? CupertinoColors.systemRed
-                              : CupertinoColors.systemGrey4
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  if (_confirmPasswordError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        _confirmPasswordError!,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemRed,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 32),
-                  // Passwort ändern Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: CupertinoButton(
-                      color: CupertinoColors.activeBlue,
-                      onPressed: _isLoading ? null : _changePassword,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: _isLoading
-                          ? const CupertinoActivityIndicator(color: CupertinoColors.white)
-                          : const Text('Passwort ändern', style: TextStyle(color: CupertinoColors.white)),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-                  // Abbrechen Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: CupertinoButton(
-                      color: CupertinoColors.systemGrey6,
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: const Text(
-                        'Abbrechen',
-                        style: TextStyle(color: CupertinoColors.activeBlue),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            const SizedBox(height: AppSpacing.lg),
+            if (_errorMessage != null) ...[
+              AppErrorView(message: _errorMessage!, compact: true),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+            if (_successMessage != null) ...[
+              _SuccessBanner(message: _successMessage!),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+            AppTextField(
+              controller: _currentPasswordController,
+              label: 'Aktuelles Passwort',
+              placeholder: 'Aktuelles Passwort eingeben',
+              obscureText: true,
+              errorText: _currentPasswordError,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: _newPasswordController,
+              label: 'Neues Passwort',
+              placeholder: 'Neues Passwort eingeben',
+              obscureText: true,
+              errorText: _newPasswordError,
+              helperText: 'Mindestens 6 Zeichen.',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: _confirmPasswordController,
+              label: 'Neues Passwort bestätigen',
+              placeholder: 'Neues Passwort wiederholen',
+              obscureText: true,
+              errorText: _confirmPasswordError,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            AppPrimaryButton(
+              label: 'Passwort ändern',
+              icon: CupertinoIcons.lock_rotation,
+              isLoading: _isLoading,
+              onPressed: _isLoading ? null : _changePassword,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppSecondaryButton(
+              label: 'Abbrechen',
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SuccessBanner extends StatelessWidget {
+  const _SuccessBanner({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.successSoft,
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(
+          color: AppColors.success.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            CupertinoIcons.check_mark_circled_solid,
+            color: AppColors.success,
+            size: 20,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTextStyles.body.copyWith(color: AppColors.success),
+            ),
+          ),
+        ],
       ),
     );
   }

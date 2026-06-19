@@ -1,64 +1,61 @@
 import 'package:flutter/cupertino.dart';
-import 'package:power_plan_fe/styles.dart';
 
 import 'model/plan_list_item.dart';
+import 'theme/app_colors.dart';
+import 'theme/app_spacing.dart';
+import 'theme/app_text_styles.dart';
+import 'widgets/app_badge.dart';
+import 'widgets/app_card.dart';
 
 class PlanRowItem extends StatelessWidget {
-  const PlanRowItem({required this.plan});
+  const PlanRowItem({super.key, required this.plan, this.onTap});
 
   final PlanListItem plan;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final row = SafeArea(
-      top: false,
-      bottom: false,
-      minimum: const EdgeInsets.only(
-        left: 16,
-        top: 8,
-        bottom: 8,
-        right: 8,
-      ),
+    final subtitle = plan.classifications.isNotEmpty
+        ? plan.classifications.join(' · ')
+        : null;
+
+    return AppCard(
+      onTap: onTap,
       child: Row(
-        children: <Widget>[
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  plan.name,
+                  style: AppTextStyles.titleSm,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
-                    plan.name,
-                    style: Styles.productRowItemName,
+                    subtitle,
+                    style: AppTextStyles.bodySecondary,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  Padding(padding: EdgeInsets.only(top: 8)),
-                  Text(
-                    '${plan.difficultyLevel?.toLowerCase()}',
-                    style: Styles.productRowItemPrice,
-                  )
                 ],
-              ),
+                const SizedBox(height: AppSpacing.sm),
+                AppBadge.difficulty(plan.difficultyLevel),
+              ],
             ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          const Icon(
+            CupertinoIcons.chevron_right,
+            color: AppColors.textSecondary,
+            size: 18,
           ),
         ],
       ),
-    );
-
-    return Column(
-      children: <Widget>[
-        row,
-        Padding(
-          padding: const EdgeInsets.only(
-            left: 100,
-            right: 16,
-          ),
-          child: Container(
-            height: 1,
-            color: Styles.productRowDivider,
-          ),
-        ),
-      ],
     );
   }
 }

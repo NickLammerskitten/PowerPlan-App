@@ -1,19 +1,24 @@
-
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:power_plan_fe/services/auth/auth_service.dart';
 import 'package:power_plan_fe/pages/register_page.dart';
+import 'package:power_plan_fe/theme/app_colors.dart';
+import 'package:power_plan_fe/theme/app_radius.dart';
+import 'package:power_plan_fe/theme/app_spacing.dart';
+import 'package:power_plan_fe/theme/app_text_styles.dart';
+import 'package:power_plan_fe/widgets/app_error_view.dart';
+import 'package:power_plan_fe/widgets/app_primary_button.dart';
+import 'package:power_plan_fe/widgets/app_secondary_button.dart';
+import 'package:power_plan_fe/widgets/app_text_field.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -51,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
       if (email.isEmpty) {
         _emailError = 'E-Mail ist erforderlich';
       } else if (!_isValidEmail(email)) {
-        _emailError = 'Bitte geben Sie eine gültige E-Mail-Adresse ein';
+        _emailError = 'Bitte gib eine gültige E-Mail-Adresse ein';
       } else {
         _emailError = null;
       }
@@ -78,10 +83,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
-    // Validierung vor dem Absenden
     if (!_areInputsValid()) {
       setState(() {
-        _errorMessage = 'Bitte korrigieren Sie die Fehler in den Eingabefeldern';
+        _errorMessage = 'Bitte korrigiere die Fehler in den Eingabefeldern';
       });
       return;
     }
@@ -97,13 +101,15 @@ class _LoginPageState extends State<LoginPage> {
       _passwordController.text,
     );
 
+    if (!mounted) return;
     setState(() {
       _isLoading = false;
     });
 
     if (!success && mounted) {
       setState(() {
-        _errorMessage = Provider.of<AuthService>(context, listen: false).errorMessage;
+        _errorMessage =
+            Provider.of<AuthService>(context, listen: false).errorMessage;
       });
     }
   }
@@ -111,188 +117,112 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Anmelden'),
-      ),
+      backgroundColor: AppColors.background,
       child: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            const SizedBox(height: 40),
-            // Logo oder App-Name
-            const Center(
-              child: Icon(
-                CupertinoIcons.headphones,
-                size: 80,
-                color: CupertinoColors.activeBlue,
+            const SizedBox(height: AppSpacing.xxl),
+            Center(
+              child: Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  color: AppColors.accentSoft,
+                  borderRadius: AppRadius.xlAll,
+                  border: Border.all(
+                    color: AppColors.accent.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
+                child: const Icon(
+                  CupertinoIcons.bolt_fill,
+                  size: 52,
+                  color: AppColors.accent,
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            const Center(
+            const SizedBox(height: AppSpacing.lg),
+            Center(
+              child: Text('Powerplan', style: AppTextStyles.titleLg),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Center(
               child: Text(
-                'Powerplan',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Dein moderner Trainingsbegleiter.',
+                style: AppTextStyles.bodySecondary,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: AppSpacing.xxl),
 
-            // Fehlermeldung
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.systemRed.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: CupertinoColors.systemRed),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
+            if (_errorMessage != null) ...[
+              AppErrorView(message: _errorMessage!, compact: true),
+              const SizedBox(height: AppSpacing.lg),
+            ],
 
-            // Anmeldeformular
-            Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('E-Mail', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  CupertinoTextField(
-                    controller: _emailController,
-                    placeholder: 'E-Mail-Adresse eingeben',
-                    keyboardType: TextInputType.emailAddress,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: _emailError != null
-                              ? CupertinoColors.systemRed
-                              : CupertinoColors.systemGrey4
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  if (_emailError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        _emailError!,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemRed,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 16),
+            AppTextField(
+              controller: _emailController,
+              label: 'E-Mail',
+              placeholder: 'E-Mail-Adresse eingeben',
+              keyboardType: TextInputType.emailAddress,
+              errorText: _emailError,
+              autocorrect: false,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: _passwordController,
+              label: 'Passwort',
+              placeholder: 'Passwort eingeben',
+              obscureText: true,
+              errorText: _passwordError,
+              helperText: 'Mindestens 6 Zeichen.',
+            ),
 
-                  const Text('Passwort', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  CupertinoTextField(
-                    controller: _passwordController,
-                    placeholder: 'Passwort eingeben',
-                    obscureText: true,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: _passwordError != null
-                              ? CupertinoColors.systemRed
-                              : CupertinoColors.systemGrey4
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  if (_passwordError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        _passwordError!,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemRed,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  // Passwort-Anforderungen
-                  Text(
-                    'Passwort muss mindestens 6 Zeichen lang sein',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: CupertinoColors.systemGrey,
-                    ),
-                  ),
+            const SizedBox(height: AppSpacing.xl),
+            AppPrimaryButton(
+              label: 'Anmelden',
+              icon: CupertinoIcons.arrow_right_circle_fill,
+              isLoading: _isLoading,
+              onPressed: _isLoading ? null : _login,
+            ),
 
-                  const SizedBox(height: 24),
-                  // Anmelde-Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: CupertinoButton(
-                      color: CupertinoColors.activeBlue,
-                      onPressed: _isLoading ? null : _login,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: _isLoading
-                          ? const CupertinoActivityIndicator(color: CupertinoColors.white)
-                          : const Text('Anmelden', style: TextStyle(color: CupertinoColors.white)),
-                    ),
+            const SizedBox(height: AppSpacing.lg),
+            const _DividerWithLabel(label: 'Noch kein Konto?'),
+            const SizedBox(height: AppSpacing.lg),
+            AppSecondaryButton(
+              label: 'Registrieren',
+              icon: CupertinoIcons.person_add,
+              onPressed: () {
+                Navigator.of(context).push(
+                  CupertinoPageRoute(
+                    builder: (context) => const RegisterPage(),
                   ),
-
-                  const SizedBox(height: 16),
-                  // Passwort vergessen
-                  Center(
-                    child: CupertinoButton(
-                      child: const Text('Passwort vergessen?'),
-                      onPressed: () {
-                        // TODO: Navigieren Sie zur Passwort-Reset-Seite
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-                  // Trennlinie
-                  const Row(
-                    children: [
-                      Expanded(child: Divider()),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Noch kein Konto?'),
-                      ),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-                  // Registrieren-Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: CupertinoButton(
-                      color: CupertinoColors.systemGrey6,
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          CupertinoPageRoute(
-                            builder: (context) => const RegisterPage(),
-                          ),
-                        );
-                      },
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: const Text(
-                        'Registrieren',
-                        style: TextStyle(color: CupertinoColors.activeBlue),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DividerWithLabel extends StatelessWidget {
+  const _DividerWithLabel({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(child: Container(height: 1, color: AppColors.divider)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Text(label, style: AppTextStyles.caption),
+        ),
+        Expanded(child: Container(height: 1, color: AppColors.divider)),
+      ],
     );
   }
 }

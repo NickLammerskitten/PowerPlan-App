@@ -1,17 +1,23 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:power_plan_fe/services/auth/auth_service.dart';
+import 'package:power_plan_fe/theme/app_colors.dart';
+import 'package:power_plan_fe/theme/app_radius.dart';
+import 'package:power_plan_fe/theme/app_spacing.dart';
+import 'package:power_plan_fe/theme/app_text_styles.dart';
+import 'package:power_plan_fe/widgets/app_error_view.dart';
+import 'package:power_plan_fe/widgets/app_primary_button.dart';
+import 'package:power_plan_fe/widgets/app_secondary_button.dart';
+import 'package:power_plan_fe/widgets/app_text_field.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+  const RegisterPage({super.key});
 
   @override
-  _RegisterPageState createState() => _RegisterPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -35,9 +41,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   void dispose() {
-    _emailController.removeListener(_validateEmail);
-    _passwordController.removeListener(_validatePassword);
-    _confirmPasswordController.removeListener(_validateConfirmPassword);
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -57,7 +60,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (email.isEmpty) {
         _emailError = 'E-Mail ist erforderlich';
       } else if (!_isValidEmail(email)) {
-        _emailError = 'Bitte geben Sie eine gültige E-Mail-Adresse ein';
+        _emailError = 'Bitte gib eine gültige E-Mail-Adresse ein';
       } else {
         _emailError = null;
       }
@@ -80,7 +83,6 @@ class _RegisterPageState extends State<RegisterPage> {
   void _validateConfirmPassword() {
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
-
     setState(() {
       if (confirmPassword.isEmpty) {
         _confirmPasswordError = 'Passwortbestätigung ist erforderlich';
@@ -96,7 +98,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _validateEmail();
     _validatePassword();
     _validateConfirmPassword();
-
     return _emailError == null &&
         _passwordError == null &&
         _confirmPasswordError == null;
@@ -105,7 +106,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _register() async {
     if (!_areInputsValid()) {
       setState(() {
-        _errorMessage = 'Bitte korrigieren Sie die Fehler in den Eingabefeldern';
+        _errorMessage = 'Bitte korrigiere die Fehler in den Eingabefeldern';
       });
       return;
     }
@@ -121,6 +122,7 @@ class _RegisterPageState extends State<RegisterPage> {
       _passwordController.text,
     );
 
+    if (!mounted) return;
     setState(() {
       _isLoading = false;
     });
@@ -129,7 +131,8 @@ class _RegisterPageState extends State<RegisterPage> {
       Navigator.of(context).pop();
     } else if (mounted) {
       setState(() {
-        _errorMessage = Provider.of<AuthService>(context, listen: false).errorMessage;
+        _errorMessage =
+            Provider.of<AuthService>(context, listen: false).errorMessage;
       });
     }
   }
@@ -137,160 +140,89 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      backgroundColor: AppColors.background,
       navigationBar: const CupertinoNavigationBar(
+        backgroundColor: AppColors.background,
         middle: Text('Registrieren'),
       ),
       child: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            const SizedBox(height: 24),
-
-            // Fehlermeldung
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.systemRed.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: CupertinoColors.systemRed),
-                    textAlign: TextAlign.center,
+            const SizedBox(height: AppSpacing.lg),
+            Center(
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.accentSoft,
+                  borderRadius: AppRadius.xlAll,
+                  border: Border.all(
+                    color: AppColors.accent.withValues(alpha: 0.4),
+                    width: 1,
                   ),
                 ),
+                child: const Icon(
+                  CupertinoIcons.person_add_solid,
+                  size: 40,
+                  color: AppColors.accent,
+                ),
               ),
-
-            // Registrierungsformular
-            Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('E-Mail', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  CupertinoTextField(
-                    controller: _emailController,
-                    placeholder: 'E-Mail-Adresse eingeben',
-                    keyboardType: TextInputType.emailAddress,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: _emailError != null
-                              ? CupertinoColors.systemRed
-                              : CupertinoColors.systemGrey4
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  if (_emailError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        _emailError!,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemRed,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-
-                  const Text('Passwort', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  CupertinoTextField(
-                    controller: _passwordController,
-                    placeholder: 'Passwort eingeben',
-                    obscureText: true,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: _passwordError != null
-                              ? CupertinoColors.systemRed
-                              : CupertinoColors.systemGrey4
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  if (_passwordError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        _passwordError!,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemRed,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  // Passwort-Anforderungen
-                  Text(
-                    'Passwort muss mindestens 6 Zeichen lang sein',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: CupertinoColors.systemGrey,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  const Text('Passwort bestätigen', style: TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  CupertinoTextField(
-                    controller: _confirmPasswordController,
-                    placeholder: 'Passwort wiederholen',
-                    obscureText: true,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: _confirmPasswordError != null
-                              ? CupertinoColors.systemRed
-                              : CupertinoColors.systemGrey4
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  if (_confirmPasswordError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        _confirmPasswordError!,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemRed,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 24),
-                  // Registrieren-Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: CupertinoButton(
-                      color: CupertinoColors.activeBlue,
-                      onPressed: _isLoading ? null : _register,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: _isLoading
-                          ? const CupertinoActivityIndicator(color: CupertinoColors.white)
-                          : const Text('Registrieren', style: TextStyle(color: CupertinoColors.white)),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-                  // Zurück zur Anmeldung
-                  Center(
-                    child: CupertinoButton(
-                      child: const Text('Bereits registriert? Anmelden'),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                  ),
-                ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Center(
+              child: Text('Konto erstellen', style: AppTextStyles.titleLg),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Center(
+              child: Text(
+                'Starte deine Powerplan-Reise.',
+                style: AppTextStyles.bodySecondary,
               ),
+            ),
+            const SizedBox(height: AppSpacing.xxl),
+
+            if (_errorMessage != null) ...[
+              AppErrorView(message: _errorMessage!, compact: true),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+
+            AppTextField(
+              controller: _emailController,
+              label: 'E-Mail',
+              placeholder: 'E-Mail-Adresse eingeben',
+              keyboardType: TextInputType.emailAddress,
+              errorText: _emailError,
+              autocorrect: false,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: _passwordController,
+              label: 'Passwort',
+              placeholder: 'Passwort eingeben',
+              obscureText: true,
+              errorText: _passwordError,
+              helperText: 'Mindestens 6 Zeichen.',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: _confirmPasswordController,
+              label: 'Passwort bestätigen',
+              placeholder: 'Passwort wiederholen',
+              obscureText: true,
+              errorText: _confirmPasswordError,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            AppPrimaryButton(
+              label: 'Registrieren',
+              icon: CupertinoIcons.person_add,
+              isLoading: _isLoading,
+              onPressed: _isLoading ? null : _register,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppSecondaryButton(
+              label: 'Bereits registriert? Anmelden',
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         ),
